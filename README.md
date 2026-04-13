@@ -93,7 +93,7 @@ EnotriumSyndicate/Syndar/
 |------|------|
 | `arthedain` | Edge SNN learning algorithm |
 | `Hyperspectral-Restruct` | 3D CNN soil prediction model |
-| **Syndar** | **Fleet coordination (this repo)** |
+| **Syndar** | **Fleet coordination** |
 | `AIP` | Supply chain command center |
 | `Icarus` | Drone hardware platform (planned) |
 
