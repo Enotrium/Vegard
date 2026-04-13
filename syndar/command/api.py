@@ -29,9 +29,10 @@ from syndar.command.mission import MissionPlanner
 from syndar.fabric.database import Database, DatabaseConfig
 from syndar.fabric.drift_monitor import DriftMonitor
 from syndar.fabric.mesh import Mesh
+from syndar.logging_config import configure_logging, get_logger
 from fastapi.responses import HTMLResponse
 
-logger = structlog.get_logger()
+logger = get_logger(__name__)
 
 security = HTTPBearer()
 limiter = Limiter(key_func=get_remote_address)
@@ -90,19 +91,24 @@ auth_manager: Optional[AuthManager] = None
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
+    configure_logging(level="INFO", json_output=True)
     logger.info("Syndar API starting")
     
     # Initialize database
     if database:
         await database.initialize()
+        logger.info("Database initialized")
     
     # Start components
     if mesh:
         await mesh.start()
+        logger.info("Mesh started")
     if mission_planner and mission_planner.task_allocator:
         await mission_planner.task_allocator.start()
+        logger.info("Task allocator started")
     if drift_monitor:
         await drift_monitor.start()
+        logger.info("Drift monitor started")
     
     yield
     
@@ -114,6 +120,8 @@ async def lifespan(app: FastAPI):
         await drift_monitor.stop()
     if database:
         await database.close()
+        logger.info("Database closed")
+    logger.info("Syndar API shutdown complete")
 
 
 app = FastAPI(

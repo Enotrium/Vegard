@@ -14,10 +14,10 @@ from typing import Optional
 import structlog
 from pydantic import BaseModel, Field
 
+from syndar.logging_config import get_logger, bind_context
 from syndar.fabric.mesh import EntityState, Position
 
-logger = structlog.get_logger()
-
+logger = get_logger(__name__)
 
 class SpectralConfig(BaseModel):
     resolution_m: float = 0.5

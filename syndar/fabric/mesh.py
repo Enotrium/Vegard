@@ -1,7 +1,6 @@
-"""Gossip protocol state mesh - Anduril Lattice Entity Mesh analog
+"""Gossip protocol mesh - core coordination fabric
 
-Each node broadcasts entity state to peers without central broker.
-Eventual consistency via gossip fanout.
+Entities broadcast state, neighbors gossip to fanout, stale entities timeout.
 """
 
 import asyncio
@@ -11,13 +10,14 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Callable, Optional
 from collections.abc import AsyncIterator
 
+import numpy as np
 import structlog
 from pydantic import BaseModel, Field
 
-from syndar.config import get_config
 from syndar.fabric.database import Database
+from syndar.logging_config import get_logger, bind_context
 
-logger = structlog.get_logger()
+logger = get_logger(__name__)
 
 
 class Position(BaseModel):
@@ -139,6 +139,8 @@ class EntityStore:
 
     async def update(self, entity: EntityState) -> None:
         """Update entity state and notify subscribers"""
+        bind_context(entity_id=entity.entity_id, entity_type=entity.entity_type)
+        
         async with self._lock:
             old = self._entities.get(entity.entity_id)
             self._entities[entity.entity_id] = entity
@@ -162,9 +164,11 @@ class EntityStore:
         if self._database:
             await self._database.upsert_entity(entity)
             await self._database.record_entity_history(entity)
+            logger.debug("Entity persisted to database", entity_id=entity.entity_id)
 
         if old is None or old.timestamp_ms < entity.timestamp_ms:
             await self._notify(entity)
+            logger.debug("Entity updated and notified", entity_id=entity.entity_id)
 
     async def get(self, entity_id: str) -> Optional[EntityState]:
         async with self._lock:
