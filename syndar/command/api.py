@@ -591,34 +591,61 @@ async def get_stats() -> dict:
     return stats
 
 
-@app.websocket("/stream")
+@app.websocket("/stream", tags=["Real-time"])
 async def websocket_stream(websocket: WebSocket):
-    """WebSocket for real-time entity stream"""
-    await websocket.accept()
-
-    if not mesh:
-        await websocket.send_json({"error": "Mesh not initialized"})
-        await websocket.close()
-        return
-
-    queue = asyncio.Queue()
-
-    def on_entity_update(entity):
-        try:
-            queue.put_nowait(entity)
-        except asyncio.QueueFull:
-            pass
-
-    mesh.store.subscribe(on_entity_update)
-
+    """
+    WebSocket for real-time entity stream
+    
+    Provides a real-time stream of entity updates using WebSocket protocol.
+    Includes automatic reconnection support and error handling.
+    
+    The client should implement reconnection logic on disconnect.
+    """
     try:
-        while True:
-            entity = await queue.get()
-            await websocket.send_json(json.loads(entity.model_dump_json()))
-    except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
-    finally:
-        mesh.store.unsubscribe(on_entity_update)
+        await websocket.accept()
+        
+        if not mesh:
+            await websocket.send_json({"error": "Mesh not initialized"})
+            await websocket.close(code=1011, reason="Service unavailable")
+            return
+
+        queue = asyncio.Queue(maxsize=1000)
+        ping_interval = 30  # Send ping every 30 seconds
+        last_ping = asyncio.get_event_loop().time()
+
+        def on_entity_update(entity):
+            try:
+                queue.put_nowait(entity)
+            except asyncio.QueueFull:
+                logger.warning("WebSocket queue full, dropping update")
+
+        mesh.store.subscribe(on_entity_update)
+
+        try:
+            while True:
+                # Wait for entity updates with timeout for ping
+                try:
+                    entity = await asyncio.wait_for(queue.get(), timeout=5.0)
+                    await websocket.send_json(json.loads(entity.model_dump_json()))
+                except asyncio.TimeoutError:
+                    # Send periodic ping to keep connection alive
+                    current_time = asyncio.get_event_loop().time()
+                    if current_time - last_ping > ping_interval:
+                        await websocket.send_json({"type": "ping", "timestamp": current_time})
+                        last_ping = current_time
+                        
+        except WebSocketDisconnect as e:
+            logger.info("WebSocket disconnected", code=e.code, reason=e.reason)
+        except Exception as e:
+            logger.error("WebSocket error", error=str(e))
+            await websocket.close(code=1011, reason="Internal server error")
+        finally:
+            mesh.store.unsubscribe(on_entity_update)
+            logger.info("WebSocket cleanup completed")
+            
+    except Exception as e:
+        logger.error("WebSocket connection error", error=str(e))
+        await websocket.close(code=1011, reason="Connection error")
 
 
 def get_current_user(
