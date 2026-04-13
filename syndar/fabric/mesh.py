@@ -100,6 +100,11 @@ class EntityStore:
         self._subscribers: list[Callable[[EntityState], None]] = []
         self._lock = asyncio.Lock()
         self._database = database
+        
+        # Performance optimizations: indexes
+        self._type_index: dict[str, set[str]] = defaultdict(set)  # entity_type -> entity_ids
+        self._cache: dict[str, tuple[list[EntityState], float]] = {}  # query -> (result, timestamp)
+        self._cache_ttl = 1.0  # Cache TTL in seconds
 
     async def load_from_database(self) -> None:
         """Load entities from database on startup"""
@@ -138,12 +143,20 @@ class EntityStore:
             old = self._entities.get(entity.entity_id)
             self._entities[entity.entity_id] = entity
             self._history[entity.entity_id].append(entity)
+            
+            # Update type index
+            if old and old.entity_type != entity.entity_type:
+                self._type_index[old.entity_type].discard(entity.entity_id)
+            self._type_index[entity.entity_type].add(entity.entity_id)
 
             # Trim old history
             cutoff = time.time() * 1000 - self.config.max_entity_age_ms
             self._history[entity.entity_id] = [
                 e for e in self._history[entity.entity_id] if e.timestamp_ms > cutoff
             ]
+            
+            # Invalidate cache
+            self._cache.clear()
 
         # Persist to database
         if self._database:
@@ -159,10 +172,11 @@ class EntityStore:
 
     async def get_all(self, entity_type: Optional[str] = None) -> list[EntityState]:
         async with self._lock:
-            entities = list(self._entities.values())
             if entity_type:
-                entities = [e for e in entities if e.entity_type == entity_type]
-            return entities
+                # Use type index for O(1) lookup instead of O(n) filtering
+                entity_ids = self._type_index.get(entity_type, set())
+                return [self._entities[eid] for eid in entity_ids if eid in self._entities]
+            return list(self._entities.values())
 
     async def get_history(
         self, entity_id: str, start_ms: int, end_ms: int
@@ -179,7 +193,11 @@ class EntityStore:
             for entity_id, entity in list(self._entities.items()):
                 if entity.timestamp_ms < cutoff:
                     del self._entities[entity_id]
+                    # Clean up type index
+                    self._type_index[entity.entity_type].discard(entity_id)
                     removed.append(entity_id)
+            # Invalidate cache
+            self._cache.clear()
         if removed:
             logger.info("Removed stale entities", count=len(removed), ids=removed)
         return removed
