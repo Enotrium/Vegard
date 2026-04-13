@@ -39,7 +39,7 @@ class SignedPayload(BaseModel):
 
 @dataclass
 class AttestationConfig:
-    gpg_home: Path = Path.home() / ".syndar" / "gnupg"
+    gpg_home: Path = Path.home() / ".vegard" / "gnupg"
     key_type: str = "RSA"
     key_length: int = 4096
 
@@ -63,7 +63,7 @@ class AttestationService:
             key_length=self.config.key_length,
             name_real=entity_id,
             name_comment="Vegard Drone Node",
-            name_email=f"{entity_id}@syndar.local",
+            name_email=f"{entity_id}@vegard.local",
         )
         key = self._gpg.gen_key(key_input)
 

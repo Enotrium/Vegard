@@ -64,11 +64,11 @@ Repository = "https://github.com/EnotriumSyndicate/Vegard.git"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["syndar*"]
+include = ["vegard*"]
 exclude = ["tests*", "sandbox*"]
 
 [tool.setuptools.package-data]
-syndar = ["proto/*.proto", "configs/*.yaml"]
+vegard = ["proto/*.proto", "configs/*.yaml"]
 
 [tool.black]
 line-length = 100

@@ -4,7 +4,7 @@ import pytest
 import tempfile
 from pathlib import Path
 
-from syndar.config import ConfigLoader
+from vegard.config import ConfigLoader
 
 
 @pytest.fixture
@@ -92,13 +92,13 @@ def test_config_loader_env_override():
     """Test environment variable override"""
     import os
     
-    os.environ["SYNDAR_CONFIG"] = "/nonexistent/path.yaml"
+    os.environ["VEGARD_CONFIG"] = "/nonexistent/path.yaml"
     config = ConfigLoader()
     # Should use environment variable
     assert config.config_path == "/nonexistent/path.yaml"
     
     # Cleanup
-    del os.environ["SYNDAR_CONFIG"]
+    del os.environ["VEGARD_CONFIG"]
 
 
 def test_config_loader_nested_access(temp_config):

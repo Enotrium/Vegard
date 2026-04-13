@@ -214,7 +214,7 @@ struct WeightUpdatePacket {
 ### Python Interface
 
 ```python
-from syndar.hardware.fpga import FPGAInterface
+from vegard.hardware.fpga import FPGAInterface
 
 # Initialize interface
 fpga = FPGAInterface(
@@ -253,7 +253,7 @@ if fpga.drift_exceeded():
 ### C++ Driver (STM32/Linux)
 
 ```cpp
-#include "syndar_fpga.h"
+#include "vegard_fpga.h"
 
 int main() {
     // Initialize SPI

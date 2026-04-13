@@ -23,17 +23,17 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from syndar.auth import AuthManager, AuthConfig, get_auth_manager, set_auth_manager
-from syndar.command.fop import FusedFieldPicture
-from syndar.command.mission import MissionPlanner
-from syndar.fabric.database import Database, DatabaseConfig
-from syndar.fabric.drift_monitor import DriftMonitor
-from syndar.fabric.mesh import Mesh
+from vegard.auth import AuthManager, AuthConfig, get_auth_manager, set_auth_manager
+from vegard.command.fop import FusedFieldPicture
+from vegard.command.mission import MissionPlanner
+from vegard.fabric.database import Database, DatabaseConfig
+from vegard.fabric.drift_monitor import DriftMonitor
+from vegard.fabric.mesh import Mesh
 from fastapi.responses import HTMLResponse
 
 # Lazy import to avoid circular dependency
 try:
-    from syndar.logging_config import configure_logging, get_logger
+    from vegard.logging_config import configure_logging, get_logger
     logger = get_logger(__name__)
 except ImportError:
     logger = structlog.get_logger()
@@ -341,7 +341,7 @@ async def create_task(task_request: dict) -> dict:
     if not mission_planner:
         raise HTTPException(status_code=503, detail="Mission planner not initialized")
 
-    from syndar.fabric.task_allocator import TaskRequest
+    from vegard.fabric.task_allocator import TaskRequest
 
     try:
         task = TaskRequest(**task_request)

@@ -3,8 +3,8 @@
 import grpc
 import warnings
 
-from syndar.proto import entity_pb2 as syndar_dot_proto_dot_entity__pb2
-from syndar.proto import transport_pb2 as syndar_dot_proto_dot_transport__pb2
+from vegard.proto import entity_pb2 as vegard_dot_proto_dot_entity__pb2
+from vegard.proto import transport_pb2 as vegard_dot_proto_dot_transport__pb2
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
@@ -19,7 +19,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in syndar/proto/transport_pb2_grpc.py depends on'
+        + ' but the generated code in vegard/proto/transport_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -38,29 +38,29 @@ class MeshServiceStub(object):
             channel: A grpc.Channel.
         """
         self.StreamEntities = channel.stream_stream(
-                '/syndar.api.v1.MeshService/StreamEntities',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                '/vegard.api.v1.MeshService/StreamEntities',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
                 _registered_method=True)
         self.PublishEntity = channel.unary_unary(
-                '/syndar.api.v1.MeshService/PublishEntity',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.PublishAck.FromString,
+                '/vegard.api.v1.MeshService/PublishEntity',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.PublishAck.FromString,
                 _registered_method=True)
         self.SyncEntities = channel.unary_unary(
-                '/syndar.api.v1.MeshService/SyncEntities',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.SyncAck.FromString,
+                '/vegard.api.v1.MeshService/SyncEntities',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.SyncAck.FromString,
                 _registered_method=True)
         self.QueryEntities = channel.unary_unary(
-                '/syndar.api.v1.MeshService/QueryEntities',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_entity__pb2.EntityHistory.FromString,
+                '/vegard.api.v1.MeshService/QueryEntities',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_entity__pb2.EntityHistory.FromString,
                 _registered_method=True)
         self.Heartbeat = channel.unary_unary(
-                '/syndar.api.v1.MeshService/Heartbeat',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.HeartbeatRequest.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.HeartbeatResponse.FromString,
+                '/vegard.api.v1.MeshService/Heartbeat',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.HeartbeatRequest.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.HeartbeatResponse.FromString,
                 _registered_method=True)
 
 
@@ -109,34 +109,34 @@ def add_MeshServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'StreamEntities': grpc.stream_stream_rpc_method_handler(
                     servicer.StreamEntities,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
             ),
             'PublishEntity': grpc.unary_unary_rpc_method_handler(
                     servicer.PublishEntity,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.PublishAck.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.PublishAck.SerializeToString,
             ),
             'SyncEntities': grpc.unary_unary_rpc_method_handler(
                     servicer.SyncEntities,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.SyncAck.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.SyncAck.SerializeToString,
             ),
             'QueryEntities': grpc.unary_unary_rpc_method_handler(
                     servicer.QueryEntities,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_entity__pb2.EntityHistory.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_entity__pb2.EntityHistory.SerializeToString,
             ),
             'Heartbeat': grpc.unary_unary_rpc_method_handler(
                     servicer.Heartbeat,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.HeartbeatRequest.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.HeartbeatResponse.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.HeartbeatRequest.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.HeartbeatResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'syndar.api.v1.MeshService', rpc_method_handlers)
+            'vegard.api.v1.MeshService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('syndar.api.v1.MeshService', rpc_method_handlers)
+    server.add_registered_method_handlers('vegard.api.v1.MeshService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -159,9 +159,9 @@ class MeshService(object):
         return grpc.experimental.stream_stream(
             request_iterator,
             target,
-            '/syndar.api.v1.MeshService/StreamEntities',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+            '/vegard.api.v1.MeshService/StreamEntities',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
             options,
             channel_credentials,
             insecure,
@@ -186,9 +186,9 @@ class MeshService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.MeshService/PublishEntity',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.PublishAck.FromString,
+            '/vegard.api.v1.MeshService/PublishEntity',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.PublishAck.FromString,
             options,
             channel_credentials,
             insecure,
@@ -213,9 +213,9 @@ class MeshService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.MeshService/SyncEntities',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.SyncAck.FromString,
+            '/vegard.api.v1.MeshService/SyncEntities',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.SyncAck.FromString,
             options,
             channel_credentials,
             insecure,
@@ -240,9 +240,9 @@ class MeshService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.MeshService/QueryEntities',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_entity__pb2.EntityHistory.FromString,
+            '/vegard.api.v1.MeshService/QueryEntities',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_entity__pb2.EntityHistory.FromString,
             options,
             channel_credentials,
             insecure,
@@ -267,9 +267,9 @@ class MeshService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.MeshService/Heartbeat',
-            syndar_dot_proto_dot_transport__pb2.HeartbeatRequest.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.HeartbeatResponse.FromString,
+            '/vegard.api.v1.MeshService/Heartbeat',
+            vegard_dot_proto_dot_transport__pb2.HeartbeatRequest.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.HeartbeatResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -292,34 +292,34 @@ class TaskServiceStub(object):
             channel: A grpc.Channel.
         """
         self.PublishTask = channel.unary_unary(
-                '/syndar.api.v1.TaskService/PublishTask',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.TaskPublished.FromString,
+                '/vegard.api.v1.TaskService/PublishTask',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.TaskPublished.FromString,
                 _registered_method=True)
         self.Bid = channel.unary_unary(
-                '/syndar.api.v1.TaskService/Bid',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BidAck.FromString,
+                '/vegard.api.v1.TaskService/Bid',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BidAck.FromString,
                 _registered_method=True)
         self.AcceptTask = channel.unary_unary(
-                '/syndar.api.v1.TaskService/AcceptTask',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.TaskAssigned.FromString,
+                '/vegard.api.v1.TaskService/AcceptTask',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.TaskAssigned.FromString,
                 _registered_method=True)
         self.StreamProgress = channel.stream_stream(
-                '/syndar.api.v1.TaskService/StreamProgress',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                '/vegard.api.v1.TaskService/StreamProgress',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
                 _registered_method=True)
         self.CompleteTask = channel.unary_unary(
-                '/syndar.api.v1.TaskService/CompleteTask',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.CompletionAck.FromString,
+                '/vegard.api.v1.TaskService/CompleteTask',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.CompletionAck.FromString,
                 _registered_method=True)
         self.CancelTask = channel.unary_unary(
-                '/syndar.api.v1.TaskService/CancelTask',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.CancelRequest.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.CancelResponse.FromString,
+                '/vegard.api.v1.TaskService/CancelTask',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.CancelRequest.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.CancelResponse.FromString,
                 _registered_method=True)
 
 
@@ -374,39 +374,39 @@ def add_TaskServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'PublishTask': grpc.unary_unary_rpc_method_handler(
                     servicer.PublishTask,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.TaskPublished.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.TaskPublished.SerializeToString,
             ),
             'Bid': grpc.unary_unary_rpc_method_handler(
                     servicer.Bid,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BidAck.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BidAck.SerializeToString,
             ),
             'AcceptTask': grpc.unary_unary_rpc_method_handler(
                     servicer.AcceptTask,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.TaskAssigned.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.TaskAssigned.SerializeToString,
             ),
             'StreamProgress': grpc.stream_stream_rpc_method_handler(
                     servicer.StreamProgress,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
             ),
             'CompleteTask': grpc.unary_unary_rpc_method_handler(
                     servicer.CompleteTask,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.CompletionAck.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.CompletionAck.SerializeToString,
             ),
             'CancelTask': grpc.unary_unary_rpc_method_handler(
                     servicer.CancelTask,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.CancelRequest.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.CancelResponse.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.CancelRequest.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.CancelResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'syndar.api.v1.TaskService', rpc_method_handlers)
+            'vegard.api.v1.TaskService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('syndar.api.v1.TaskService', rpc_method_handlers)
+    server.add_registered_method_handlers('vegard.api.v1.TaskService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -428,9 +428,9 @@ class TaskService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.TaskService/PublishTask',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.TaskPublished.FromString,
+            '/vegard.api.v1.TaskService/PublishTask',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.TaskPublished.FromString,
             options,
             channel_credentials,
             insecure,
@@ -455,9 +455,9 @@ class TaskService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.TaskService/Bid',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BidAck.FromString,
+            '/vegard.api.v1.TaskService/Bid',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BidAck.FromString,
             options,
             channel_credentials,
             insecure,
@@ -482,9 +482,9 @@ class TaskService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.TaskService/AcceptTask',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.TaskAssigned.FromString,
+            '/vegard.api.v1.TaskService/AcceptTask',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.TaskAssigned.FromString,
             options,
             channel_credentials,
             insecure,
@@ -509,9 +509,9 @@ class TaskService(object):
         return grpc.experimental.stream_stream(
             request_iterator,
             target,
-            '/syndar.api.v1.TaskService/StreamProgress',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+            '/vegard.api.v1.TaskService/StreamProgress',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
             options,
             channel_credentials,
             insecure,
@@ -536,9 +536,9 @@ class TaskService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.TaskService/CompleteTask',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.CompletionAck.FromString,
+            '/vegard.api.v1.TaskService/CompleteTask',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.CompletionAck.FromString,
             options,
             channel_credentials,
             insecure,
@@ -563,9 +563,9 @@ class TaskService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.TaskService/CancelTask',
-            syndar_dot_proto_dot_transport__pb2.CancelRequest.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.CancelResponse.FromString,
+            '/vegard.api.v1.TaskService/CancelTask',
+            vegard_dot_proto_dot_transport__pb2.CancelRequest.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.CancelResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -588,24 +588,24 @@ class DriftServiceStub(object):
             channel: A grpc.Channel.
         """
         self.StreamDrift = channel.stream_stream(
-                '/syndar.api.v1.DriftService/StreamDrift',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                '/vegard.api.v1.DriftService/StreamDrift',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
                 _registered_method=True)
         self.QueryDrift = channel.unary_unary(
-                '/syndar.api.v1.DriftService/QueryDrift',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                '/vegard.api.v1.DriftService/QueryDrift',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
                 _registered_method=True)
         self.SubscribeAlerts = channel.unary_stream(
-                '/syndar.api.v1.DriftService/SubscribeAlerts',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.AlertSubscription.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                '/vegard.api.v1.DriftService/SubscribeAlerts',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.AlertSubscription.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
                 _registered_method=True)
         self.RequestRecalibration = channel.unary_unary(
-                '/syndar.api.v1.DriftService/RequestRecalibration',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                '/vegard.api.v1.DriftService/RequestRecalibration',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
                 _registered_method=True)
 
 
@@ -646,29 +646,29 @@ def add_DriftServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'StreamDrift': grpc.stream_stream_rpc_method_handler(
                     servicer.StreamDrift,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
             ),
             'QueryDrift': grpc.unary_unary_rpc_method_handler(
                     servicer.QueryDrift,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
             ),
             'SubscribeAlerts': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeAlerts,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.AlertSubscription.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.AlertSubscription.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
             ),
             'RequestRecalibration': grpc.unary_unary_rpc_method_handler(
                     servicer.RequestRecalibration,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'syndar.api.v1.DriftService', rpc_method_handlers)
+            'vegard.api.v1.DriftService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('syndar.api.v1.DriftService', rpc_method_handlers)
+    server.add_registered_method_handlers('vegard.api.v1.DriftService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -690,9 +690,9 @@ class DriftService(object):
         return grpc.experimental.stream_stream(
             request_iterator,
             target,
-            '/syndar.api.v1.DriftService/StreamDrift',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+            '/vegard.api.v1.DriftService/StreamDrift',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
             options,
             channel_credentials,
             insecure,
@@ -717,9 +717,9 @@ class DriftService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.DriftService/QueryDrift',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+            '/vegard.api.v1.DriftService/QueryDrift',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
             options,
             channel_credentials,
             insecure,
@@ -744,9 +744,9 @@ class DriftService(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/syndar.api.v1.DriftService/SubscribeAlerts',
-            syndar_dot_proto_dot_transport__pb2.AlertSubscription.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+            '/vegard.api.v1.DriftService/SubscribeAlerts',
+            vegard_dot_proto_dot_transport__pb2.AlertSubscription.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
             options,
             channel_credentials,
             insecure,
@@ -771,9 +771,9 @@ class DriftService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.DriftService/RequestRecalibration',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+            '/vegard.api.v1.DriftService/RequestRecalibration',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
             options,
             channel_credentials,
             insecure,
@@ -787,7 +787,7 @@ class DriftService(object):
 
 class AIPBridgeServiceStub(object):
     """AIPBridgeService - REST fallback for AIP integration
-    These messages map to REST API at /api/syndar/ingest
+    These messages map to REST API at /api/vegard/ingest
     """
 
     def __init__(self, channel):
@@ -797,25 +797,25 @@ class AIPBridgeServiceStub(object):
             channel: A grpc.Channel.
         """
         self.IngestSoil = channel.unary_unary(
-                '/syndar.api.v1.AIPBridgeService/IngestSoil',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.IngestAck.FromString,
+                '/vegard.api.v1.AIPBridgeService/IngestSoil',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.IngestAck.FromString,
                 _registered_method=True)
         self.IngestBatch = channel.unary_unary(
-                '/syndar.api.v1.AIPBridgeService/IngestBatch',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.BatchIngestAck.FromString,
+                '/vegard.api.v1.AIPBridgeService/IngestBatch',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.BatchIngestAck.FromString,
                 _registered_method=True)
         self.QueryFieldStatus = channel.unary_unary(
-                '/syndar.api.v1.AIPBridgeService/QueryFieldStatus',
-                request_serializer=syndar_dot_proto_dot_transport__pb2.FieldStatusRequest.SerializeToString,
-                response_deserializer=syndar_dot_proto_dot_transport__pb2.FieldStatusResponse.FromString,
+                '/vegard.api.v1.AIPBridgeService/QueryFieldStatus',
+                request_serializer=vegard_dot_proto_dot_transport__pb2.FieldStatusRequest.SerializeToString,
+                response_deserializer=vegard_dot_proto_dot_transport__pb2.FieldStatusResponse.FromString,
                 _registered_method=True)
 
 
 class AIPBridgeServiceServicer(object):
     """AIPBridgeService - REST fallback for AIP integration
-    These messages map to REST API at /api/syndar/ingest
+    These messages map to REST API at /api/vegard/ingest
     """
 
     def IngestSoil(self, request, context):
@@ -844,30 +844,30 @@ def add_AIPBridgeServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'IngestSoil': grpc.unary_unary_rpc_method_handler(
                     servicer.IngestSoil,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.IngestAck.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.IngestAck.SerializeToString,
             ),
             'IngestBatch': grpc.unary_unary_rpc_method_handler(
                     servicer.IngestBatch,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.BytesMessage.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.BatchIngestAck.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.BytesMessage.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.BatchIngestAck.SerializeToString,
             ),
             'QueryFieldStatus': grpc.unary_unary_rpc_method_handler(
                     servicer.QueryFieldStatus,
-                    request_deserializer=syndar_dot_proto_dot_transport__pb2.FieldStatusRequest.FromString,
-                    response_serializer=syndar_dot_proto_dot_transport__pb2.FieldStatusResponse.SerializeToString,
+                    request_deserializer=vegard_dot_proto_dot_transport__pb2.FieldStatusRequest.FromString,
+                    response_serializer=vegard_dot_proto_dot_transport__pb2.FieldStatusResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'syndar.api.v1.AIPBridgeService', rpc_method_handlers)
+            'vegard.api.v1.AIPBridgeService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('syndar.api.v1.AIPBridgeService', rpc_method_handlers)
+    server.add_registered_method_handlers('vegard.api.v1.AIPBridgeService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
 class AIPBridgeService(object):
     """AIPBridgeService - REST fallback for AIP integration
-    These messages map to REST API at /api/syndar/ingest
+    These messages map to REST API at /api/vegard/ingest
     """
 
     @staticmethod
@@ -884,9 +884,9 @@ class AIPBridgeService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.AIPBridgeService/IngestSoil',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.IngestAck.FromString,
+            '/vegard.api.v1.AIPBridgeService/IngestSoil',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.IngestAck.FromString,
             options,
             channel_credentials,
             insecure,
@@ -911,9 +911,9 @@ class AIPBridgeService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.AIPBridgeService/IngestBatch',
-            syndar_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.BatchIngestAck.FromString,
+            '/vegard.api.v1.AIPBridgeService/IngestBatch',
+            vegard_dot_proto_dot_transport__pb2.BytesMessage.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.BatchIngestAck.FromString,
             options,
             channel_credentials,
             insecure,
@@ -938,9 +938,9 @@ class AIPBridgeService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/syndar.api.v1.AIPBridgeService/QueryFieldStatus',
-            syndar_dot_proto_dot_transport__pb2.FieldStatusRequest.SerializeToString,
-            syndar_dot_proto_dot_transport__pb2.FieldStatusResponse.FromString,
+            '/vegard.api.v1.AIPBridgeService/QueryFieldStatus',
+            vegard_dot_proto_dot_transport__pb2.FieldStatusRequest.SerializeToString,
+            vegard_dot_proto_dot_transport__pb2.FieldStatusResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     protobuf-compiler \
     grpcio-tools \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -33,8 +34,8 @@ RUN python -m grpc_tools.protoc \
     proto/task.proto \
     proto/transport.proto
 
-RUN mv proto/*_pb2.py vegard/proto/ && \
-    mv proto/*_pb2_grpc.py vegard/proto/
+RUN mv proto/*_pb2.py vegard/proto/ 2>/dev/null || true && \
+    mv proto/*_pb2_grpc.py vegard/proto/ 2>/dev/null || true
 
 # Create directories for data
 RUN mkdir -p /var/lib/vegard /var/log/vegard

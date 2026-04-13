@@ -4,8 +4,8 @@ import asyncio
 import time
 import pytest
 
-from syndar.fabric.mesh import EntityState, Mesh, MeshConfig, Position
-from syndar.fabric.task_allocator import (
+from vegard.fabric.mesh import EntityState, Mesh, MeshConfig, Position
+from vegard.fabric.task_allocator import (
     SpectralConfig,
     TaskAllocator,
     TaskBid,
@@ -150,7 +150,7 @@ async def test_task_allocator_completion():
     assignment = await allocator.resolve_auction("task-test-003")
     
     # Complete task
-    from syndar.fabric.task_allocator import TaskResult
+    from vegard.fabric.task_allocator import TaskResult
     
     result = TaskResult(
         task_id="task-test-003",

@@ -5,7 +5,7 @@
       "type": "Feature",
       "properties": {
         "field_id": "test-field-001",
-        "name": "Syndar Test Field",
+        "name": "Vegard Test Field",
         "area_acres": 45.2,
         "crop_type": "hemp",
         "contract_value": 150000,

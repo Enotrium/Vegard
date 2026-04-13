@@ -15,7 +15,7 @@ import numpy as np
 import structlog
 from pydantic import BaseModel, Field
 
-from syndar.fabric.mesh import EntityState
+from vegard.fabric.mesh import EntityState
 
 logger = structlog.get_logger()
 

@@ -2,8 +2,8 @@
 
 import pytest
 import asyncio
-from syndar.command.aip_bridge import AIPBridge, AIPBridgeConfig
-from syndar.fabric.mesh import EntityState, Position, SoilPrediction
+from vegard.command.aip_bridge import AIPBridge, AIPBridgeConfig
+from vegard.fabric.mesh import EntityState, Position, SoilPrediction
 
 
 @pytest.mark.asyncio
@@ -36,7 +36,7 @@ async def test_entity_to_payload_conversion():
 
     payload = bridge._convert_entity_to_aip(entity)
 
-    assert payload.syndar_drone_id == "drone:test:001"
+    assert payload.vegard_drone_id == "drone:test:001"
     assert payload.field_id == "test-field"
     assert payload.nitrogen_mg_kg == 0.85
     assert payload.carbon_percent == 2.5
@@ -48,8 +48,8 @@ async def test_entity_to_payload_conversion():
 @pytest.mark.asyncio
 async def test_contaminant_mapping():
     """Test contaminant types map correctly to AIP schema"""
-    from syndar.fabric.mesh import SoilPrediction
-    from syndar.fabric.mesh import SoilPrediction as SP  # for Contaminant import
+    from vegard.fabric.mesh import SoilPrediction
+    from vegard.fabric.mesh import SoilPrediction as SP  # for Contaminant import
 
     config = AIPBridgeConfig()
     bridge = AIPBridge(config=config)

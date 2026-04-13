@@ -2,7 +2,7 @@
 
 import pytest
 import asyncio
-from syndar.fabric.mesh import Mesh, MeshConfig, EntityState, Position
+from vegard.fabric.mesh import Mesh, MeshConfig, EntityState, Position
 
 
 @pytest.mark.asyncio
@@ -17,7 +17,7 @@ async def test_mesh_initialization():
 @pytest.mark.asyncio
 async def test_entity_store_update():
     """Test entity store can update and retrieve"""
-    from syndar.fabric.mesh import EntityStore
+    from vegard.fabric.mesh import EntityStore
 
     store = EntityStore()
 
@@ -39,7 +39,7 @@ async def test_entity_store_update():
 @pytest.mark.asyncio
 async def test_entity_store_get_all():
     """Test getting all entities"""
-    from syndar.fabric.mesh import EntityStore
+    from vegard.fabric.mesh import EntityStore
 
     store = EntityStore()
 
@@ -62,7 +62,7 @@ async def test_entity_store_get_all():
 @pytest.mark.asyncio
 async def test_entity_store_nearby_query():
     """Test nearby entity query"""
-    from syndar.fabric.mesh import EntityStore
+    from vegard.fabric.mesh import EntityStore
 
     store = EntityStore()
 

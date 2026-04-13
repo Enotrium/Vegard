@@ -12,7 +12,7 @@ from typing import Any, Optional
 import structlog
 from pydantic import BaseModel
 
-from syndar.fabric.mesh import EntityState, Mesh
+from vegard.fabric.mesh import EntityState, Mesh
 
 logger = structlog.get_logger()
 

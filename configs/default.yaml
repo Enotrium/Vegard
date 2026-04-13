@@ -17,7 +17,7 @@ transport:
     port: 1883
     username: null
     password: null
-    client_id: "syndar-node"
+    client_id: "vegard-node"
     qos: 1
     keepalive: 60
 
@@ -76,7 +76,7 @@ drift_monitor:
 # Attestation Configuration
 attestation:
   enabled: true
-  gpg_home: "~/.syndar/gnupg"
+  gpg_home: "~/.vegard/gnupg"
   key_type: "RSA"
   key_length: 4096
   require_signatures: true     # Require signed payloads from drones
@@ -85,8 +85,8 @@ attestation:
 aip_bridge:
   enabled: true
   base_url: "http://localhost:3000"
-  ingest_endpoint: "/api/syndar/ingest"
-  api_key: null                # Set via SYNDAR_AIP_API_KEY env var
+  ingest_endpoint: "/api/vegard/ingest"
+  api_key: null                # Set via VEGARD_AIP_API_KEY env var
   timeout_s: 30.0
   max_retries: 3
 
@@ -189,13 +189,13 @@ logging:
   format: "json"
   outputs:
     - "stdout"
-    - "file:syndar.log"
+    - "file:vegard.log"
 
   structured_logging: true
   include_tracebacks: true
 
 # Environment-specific overrides
-# Use SYNDAR_ENV environment variable to select profile
+# Use VEGARD_ENV environment variable to select profile
 profiles:
   development:
     transport:

@@ -146,8 +146,8 @@ class SimpleAIPBridge:
     
     def send_result(self, result):
         payload = {
-            "syndar_drone_id": result["drone_id"],
-            "syndar_timestamp_ms": result["timestamp_ms"],
+            "vegard_drone_id": result["drone_id"],
+            "vegard_timestamp_ms": result["timestamp_ms"],
             "field_id": result["prediction"]["field_id"],
             "latitude": result["position"][0],
             "longitude": result["position"][1],
@@ -161,7 +161,7 @@ class SimpleAIPBridge:
         # Simple POST with retry
         for attempt in range(3):
             try:
-                resp = requests.post(f"{self.url}/api/syndar/ingest", 
+                resp = requests.post(f"{self.url}/api/vegard/ingest", 
                                    json=payload, 
                                    timeout=30)
                 resp.raise_for_status()
@@ -348,8 +348,8 @@ class SimpleAIPBridge:
     
     def send(self, result):
         payload = {
-            "syndar_drone_id": result["drone_id"],
-            "syndar_timestamp_ms": result["timestamp_ms"],
+            "vegard_drone_id": result["drone_id"],
+            "vegard_timestamp_ms": result["timestamp_ms"],
             "field_id": result["field_id"],
             "latitude": result.get("position", {}).get("lat", 0),
             "longitude": result.get("position", {}).get("lng", 0),
@@ -369,7 +369,7 @@ class SimpleAIPBridge:
         for attempt in range(3):
             try:
                 resp = requests.post(
-                    f"{self.base_url}/api/syndar/ingest",
+                    f"{self.base_url}/api/vegard/ingest",
                     json=payload,
                     headers=headers,
                     timeout=30
@@ -391,11 +391,11 @@ import time
 import random
 import threading
 
-from syndar_simple.mesh import SimpleMesh
-from syndar_simple.task_allocator import assign_task_simple
-from syndar_simple.node_agent import SimpleNodeAgent
-from syndar_simple.aip_bridge import SimpleAIPBridge
-from syndar_simple.drift_monitor import SimpleDriftMonitor
+from vegard_simple.mesh import SimpleMesh
+from vegard_simple.task_allocator import assign_task_simple
+from vegard_simple.node_agent import SimpleNodeAgent
+from vegard_simple.aip_bridge import SimpleAIPBridge
+from vegard_simple.drift_monitor import SimpleDriftMonitor
 
 # Mock clients
 class MockHSI:
@@ -502,10 +502,10 @@ if __name__ == "__main__":
 python -m sandbox.mock_aip_server --port 3000
 
 # 2. Run simulation (in terminal 2)
-python SYNDAR_MVP.py
+python VEGARD_MVP.py
 
 # 3. Check AIP received data
-curl http://localhost:3000/api/syndar/stats
+curl http://localhost:3000/api/vegard/stats
 ```
 
 ---

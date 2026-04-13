@@ -2,7 +2,7 @@
 
 import pytest
 import asyncio
-from syndar.fabric.drift_monitor import DriftMonitor, DriftThresholds, NodeDriftSignal
+from vegard.fabric.drift_monitor import DriftMonitor, DriftThresholds, NodeDriftSignal
 
 
 @pytest.mark.asyncio

@@ -54,10 +54,10 @@ async def simulate_fleet(
     field_polygon = await load_field_polygon(field_path)
 
     # Create simulated mesh
-    from syndar.fabric.mesh import Mesh, MeshConfig
-    from syndar.fabric.task_allocator import TaskAllocator
-    from syndar.fabric.drift_monitor import DriftMonitor, DriftThresholds
-    from syndar.fabric.transport import TransportBus, TransportConfig
+    from vegard.fabric.mesh import Mesh, MeshConfig
+    from vegard.fabric.task_allocator import TaskAllocator
+    from vegard.fabric.drift_monitor import DriftMonitor, DriftThresholds
+    from vegard.fabric.transport import TransportBus, TransportConfig
 
     # Setup components
     mesh_config = MeshConfig(fanout=3, gossip_interval_ms=500)
@@ -87,7 +87,7 @@ async def simulate_fleet(
     logger.info("Fleet initialized", drone_count=len(drones))
 
     # Create a mission
-    from syndar.command.mission import MissionPlanner, FieldInfo
+    from vegard.command.mission import MissionPlanner, FieldInfo
 
     mission_planner = MissionPlanner(task_allocator=allocator)
 
@@ -168,7 +168,7 @@ class SimulatedDrone:
         self.allocator = allocator
         self.drift_monitor = drift_monitor
 
-        from syndar.fabric.mesh import EntityState, Position, SoilPrediction
+        from vegard.fabric.mesh import EntityState, Position, SoilPrediction
 
         self.position = Position(lat=start_pos[0], lng=start_pos[1], alt=50.0)
         self.battery_pct = 100.0
@@ -219,7 +219,7 @@ class SimulatedDrone:
                 drift_e = random.random()
                 drift_exceeded = drift_e > 0.5
 
-                from syndar.fabric.drift_monitor import NodeDriftSignal
+                from vegard.fabric.drift_monitor import NodeDriftSignal
 
                 signal = NodeDriftSignal(
                     entity_id=self.entity_id,
@@ -238,7 +238,7 @@ class SimulatedDrone:
                 # Create soil prediction (sometimes)
                 soil = None
                 if random.random() < 0.1:  # 10% chance per update
-                    from syndar.fabric.mesh import SoilPrediction
+                    from vegard.fabric.mesh import SoilPrediction
 
                     soil = SoilPrediction(
                         field_id="test-field-001",
@@ -251,7 +251,7 @@ class SimulatedDrone:
                     )
 
                 # Publish entity state
-                from syndar.fabric.mesh import EntityState
+                from vegard.fabric.mesh import EntityState
 
                 entity = EntityState(
                     entity_id=self.entity_id,

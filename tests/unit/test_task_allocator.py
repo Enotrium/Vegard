@@ -3,14 +3,14 @@
 import pytest
 import time
 
-from syndar.fabric.task_allocator import (
+from vegard.fabric.task_allocator import (
     TaskAllocator,
     TaskRequest,
     TaskBid,
     SpectralConfig,
     TaskAllocatorConfig,
 )
-from syndar.fabric.mesh import EntityState, Position
+from vegard.fabric.mesh import EntityState, Position
 
 
 @pytest.fixture
@@ -109,7 +109,7 @@ async def test_task_allocator_submit_bid(task_allocator):
 async def test_task_allocator_get_assignment(task_allocator):
     """Test getting assignment for entity"""
     # Manually set an assignment
-    from syndar.fabric.task_allocator import TaskAssignment
+    from vegard.fabric.task_allocator import TaskAssignment
     
     assignment = TaskAssignment(
         task_id="task-001",
@@ -121,14 +121,14 @@ async def test_task_allocator_get_assignment(task_allocator):
     task_allocator._assignments["task-001"] = assignment
     task_allocator._active_tasks["drone:001"] = "task-001"
     
-    retrieved = task_allocator.get_assignment("drone:001")
+    retrieved = await task_allocator.get_assignment("drone:001")
     assert retrieved is not None
     assert retrieved.task_id == "task-001"
 
 
 def test_task_allocator_list_tasks(task_allocator):
     """Test task listing"""
-    from syndar.fabric.task_allocator import TaskAssignment
+    from vegard.fabric.task_allocator import TaskAssignment
     
     # Add some assignments
     assignment1 = TaskAssignment(
@@ -160,7 +160,7 @@ def test_task_allocator_list_tasks(task_allocator):
 @pytest.mark.asyncio
 async def test_task_allocator_cancel_task(task_allocator):
     """Test task cancellation"""
-    from syndar.fabric.task_allocator import TaskAssignment
+    from vegard.fabric.task_allocator import TaskAssignment
     
     assignment = TaskAssignment(
         task_id="task-001",

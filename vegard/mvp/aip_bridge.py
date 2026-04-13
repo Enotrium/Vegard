@@ -34,9 +34,9 @@ class SimpleAIPBridge:
         
         # Build AIP payload
         payload = {
-            "syndar_drone_id": result.get("drone_id"),
-            "syndar_timestamp_ms": result.get("timestamp_ms"),
-            "syndar_task_id": result.get("task_id"),
+            "vegard_drone_id": result.get("drone_id"),
+            "vegard_timestamp_ms": result.get("timestamp_ms"),
+            "vegard_task_id": result.get("task_id"),
             "field_id": result.get("field_id"),
             "latitude": position.get("lat", 0.0),
             "longitude": position.get("lng", 0.0),
@@ -61,7 +61,7 @@ class SimpleAIPBridge:
                     headers["Authorization"] = f"Bearer {self.api_key}"
                 
                 resp = requests.post(
-                    f"{self.base_url}/api/syndar/ingest",
+                    f"{self.base_url}/api/vegard/ingest",
                     json=payload,
                     headers=headers,
                     timeout=30

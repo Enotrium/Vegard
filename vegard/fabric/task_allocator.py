@@ -14,11 +14,11 @@ from typing import Optional
 import structlog
 from pydantic import BaseModel, Field
 
-from syndar.fabric.mesh import EntityState, Position
+from vegard.fabric.mesh import EntityState, Position
 
 # Lazy import to avoid circular dependency
 try:
-    from syndar.logging_config import get_logger, bind_context
+    from vegard.logging_config import get_logger, bind_context
     logger = get_logger(__name__)
 except ImportError:
     logger = structlog.get_logger()
@@ -32,6 +32,11 @@ class SpectralConfig(BaseModel):
     band_end_nm: int = 2500
     band_count: int = 200
     exposure_ms: float = 10.0
+
+    @property
+    def bands(self) -> int:
+        """Number of spectral bands (alias for band_count)"""
+        return self.band_count
 
 
 class TaskRequest(BaseModel):
@@ -65,6 +70,7 @@ class TaskAssignment(BaseModel):
     assigned_at_ms: int
     deadline_ms: int
     status: str = "assigned"
+    completed_at_ms: Optional[int] = None
 
 
 class TaskResult(BaseModel):
@@ -127,6 +133,7 @@ class TaskAllocator:
         self._auctions: dict[str, AuctionState] = {}
         self._bids: dict[str, list[TaskBid]] = {}
         self._assignments: dict[str, TaskAssignment] = {}
+        self._active_tasks: dict[str, str] = {}  # entity_id -> task_id
         self._completed: list[TaskResult] = []
         self._subscribers: list[Callable] = []
         self._lock = asyncio.Lock()
@@ -158,16 +165,18 @@ class TaskAllocator:
                 logger.warning("Bid for unknown task", task_id=bid.task_id)
                 return False
 
-        # Persist bid to database
-        if self._database:
-            await self._database.record_bid(bid)
             if auction.winner:
                 logger.warning("Auction already closed", task_id=bid.task_id)
                 return False
 
             auction.bids.append(bid)
             logger.debug("Bid received", task_id=bid.task_id, entity_id=bid.entity_id, cost=bid.bid_cost)
-            return True
+
+        # Persist bid to database
+        if self._database:
+            await self._database.record_bid(bid)
+
+        return True
 
     async def _close_auction(self, task_id: str) -> None:
         """Close auction and assign to lowest bidder"""

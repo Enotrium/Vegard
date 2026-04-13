@@ -15,7 +15,7 @@ pip install -e .
 pip install -e ../arthedain  # Optional: edge learning dependency
 
 # Start Vegard API
-python -m syndar.command.api
+python -m vegard.command.api
 
 # Simulate a fleet of 4 drones
 python sandbox/simulate_fleet.py --drones 4 --duration 60
@@ -44,7 +44,7 @@ Vegard is structured in three layers:
 ### Layer 1 — Command (Operational Picture)
 - **FusedFieldPicture**: Materialized view, GeoJSON export for Mapbox
 - **MissionPlanner**: Goal-to-task conversion, priority scoring
-- **AIPBridge**: Clean POST to `/api/syndar/ingest`, zero circular coupling
+- **AIPBridge**: Clean POST to `/api/vegard/ingest`, zero circular coupling
 - **API**: REST + WebSocket operator interface
 
 ## Key Features
@@ -59,7 +59,7 @@ Vegard is structured in three layers:
 
 ```
 EnotriumSyndicate/Vegard/
-├── syndar/
+├── vegard/
 │   ├── node/              # Edge intelligence bridge
 │   ├── fabric/            # Coordination services
 │   ├── command/           # Operational picture + AIP integration

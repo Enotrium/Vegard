@@ -3,7 +3,7 @@
 import pytest
 import asyncio
 
-from syndar.fabric.mesh import EntityStore, EntityState, Position, Mesh, MeshConfig
+from vegard.fabric.mesh import EntityStore, EntityState, Position, Mesh, MeshConfig
 
 
 @pytest.fixture
@@ -134,8 +134,8 @@ async def test_mesh_join():
     config = MeshConfig(fanout=3)
     mesh = Mesh(config=config)
     
-    mesh.join("peer1:50051")
-    mesh.join("peer2:50051")
+    await mesh.join("peer1:50051")
+    await mesh.join("peer2:50051")
     
     assert "peer1:50051" in mesh._peers
     assert "peer2:50051" in mesh._peers

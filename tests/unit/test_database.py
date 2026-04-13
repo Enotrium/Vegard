@@ -4,7 +4,7 @@ import pytest
 import tempfile
 from pathlib import Path
 
-from syndar.fabric.database import Database, DatabaseConfig
+from vegard.fabric.database import Database, DatabaseConfig
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ async def test_database_entity_upsert(temp_db):
     """Test entity upsert"""
     await temp_db.initialize()
     
-    from syndar.fabric.mesh import EntityState, Position
+    from vegard.fabric.mesh import EntityState, Position
     
     entity = EntityState(
         entity_id="test:001",
@@ -54,7 +54,7 @@ async def test_database_entity_history(temp_db):
     """Test entity history recording"""
     await temp_db.initialize()
     
-    from syndar.fabric.mesh import EntityState, Position
+    from vegard.fabric.mesh import EntityState, Position
     
     entity = EntityState(
         entity_id="test:002",
@@ -75,7 +75,7 @@ async def test_database_task_upsert(temp_db):
     """Test task upsert"""
     await temp_db.initialize()
     
-    from syndar.fabric.task_allocator import TaskRequest, SpectralConfig
+    from vegard.fabric.task_allocator import TaskRequest, SpectralConfig
     
     task = TaskRequest(
         task_id="task-001",
@@ -100,7 +100,7 @@ async def test_database_cleanup(temp_db):
     """Test old data cleanup"""
     await temp_db.initialize()
     
-    from syndar.fabric.mesh import EntityState, Position
+    from vegard.fabric.mesh import EntityState, Position
     
     entity = EntityState(
         entity_id="test:003",

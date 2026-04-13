@@ -16,7 +16,7 @@ from watchdog.events import FileSystemEventHandler
 
 # Lazy import to avoid circular dependency
 try:
-    from syndar.logging_config import get_logger
+    from vegard.logging_config import get_logger
     logger = get_logger(__name__)
 except ImportError:
     logger = structlog.get_logger()
@@ -52,7 +52,7 @@ class ConfigLoader:
     def _find_config_file(self) -> str:
         """Find configuration file in standard locations"""
         # Check environment variable first
-        env_config = os.getenv("SYNDAR_CONFIG")
+        env_config = os.getenv("VEGARD_CONFIG")
         if env_config:
             return env_config
 
@@ -60,8 +60,8 @@ class ConfigLoader:
         possible_paths = [
             "configs/default.yaml",
             "configs/default.yml",
-            "/etc/syndar/config.yaml",
-            os.path.expanduser("~/.syndar/config.yaml"),
+            "/etc/vegard/config.yaml",
+            os.path.expanduser("~/.vegard/config.yaml"),
         ]
 
         for path in possible_paths:
@@ -87,7 +87,7 @@ class ConfigLoader:
                 self._config = yaml.safe_load(f) or {}
 
             # Apply profile if specified
-            profile = os.getenv("SYNDAR_ENV")
+            profile = os.getenv("VEGARD_ENV")
             if profile and profile in self._config.get("profiles", {}):
                 profile_config = self._config["profiles"][profile]
                 self._config = self._merge_config(self._config, profile_config)
@@ -117,10 +117,10 @@ class ConfigLoader:
     def _apply_env_overrides(self) -> None:
         """Apply environment variable overrides to config"""
         env_mappings = {
-            "SYNDAR_GRPC_PORT": ("transport", "grpc", "port"),
-            "SYNDAR_MQTT_BROKER": ("transport", "mqtt", "broker"),
-            "SYNDAR_MQTT_PORT": ("transport", "mqtt", "port"),
-            "SYNDAR_MESH_FANOUT": ("mesh", "fanout"),
+            "VEGARD_GRPC_PORT": ("transport", "grpc", "port"),
+            "VEGARD_MQTT_BROKER": ("transport", "mqtt", "broker"),
+            "VEGARD_MQTT_PORT": ("transport", "mqtt", "port"),
+            "VEGARD_MESH_FANOUT": ("mesh", "fanout"),
             "ARTHEDAIN_PATH": ("integrations", "arthedain", "path"),
             "HSI_API_URL": ("integrations", "hsi_model", "api_url"),
             "HSI_MODEL_VERSION": ("integrations", "hsi_model", "model_version"),
@@ -143,9 +143,20 @@ class ConfigLoader:
         current[path[-1]] = value
 
     def get(self, *path: str, default: Any = None) -> Any:
-        """Get configuration value by path"""
+        """Get configuration value by path
+        
+        Supports both variadic arguments and dot notation:
+            config.get("transport", "grpc_port")
+            config.get("transport.grpc_port")
+        """
+        # Handle dot notation in first argument
+        if len(path) == 1 and "." in path[0]:
+            keys = path[0].split(".")
+        else:
+            keys = path
+        
         current = self._config
-        for key in path:
+        for key in keys:
             if isinstance(current, dict) and key in current:
                 current = current[key]
             else:
@@ -199,6 +210,10 @@ class ConfigLoader:
     def get_logging_config(self) -> dict:
         """Get logging configuration"""
         return self.get("logging", default={})
+
+    def get_all(self) -> dict:
+        """Get all configuration as a dictionary"""
+        return self._config.copy()
 
     def _enable_hot_reload(self) -> None:
         """Enable file watching for configuration hot-reload"""

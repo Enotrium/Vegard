@@ -14,11 +14,11 @@ import numpy as np
 import structlog
 from pydantic import BaseModel, Field
 
-from syndar.fabric.database import Database
+from vegard.fabric.database import Database
 
 # Lazy import to avoid circular dependency
 try:
-    from syndar.logging_config import get_logger, bind_context
+    from vegard.logging_config import get_logger, bind_context
     logger = get_logger(__name__)
 except ImportError:
     logger = structlog.get_logger()
@@ -89,6 +89,12 @@ class EntityState(BaseModel):
 class MeshConfig:
     fanout: int = 3
     gossip_interval_ms: int = 1000
+    max_entity_age_ms: int = 30000
+    heartbeat_timeout_ms: int = 10000
+
+
+@dataclass
+class EntityStoreConfig:
     max_entity_age_ms: int = 30000
     heartbeat_timeout_ms: int = 10000
 

@@ -8,7 +8,7 @@ Analogous to Anduril Lattice Mesh:
 - Transport Bus: gRPC + Protobuf / MQTT mesh
 """
 
-from vegard.fabric.mesh import Mesh, EntityStore, EntityStoreConfig, MeshConfig
+from vegard.fabric.mesh import Mesh, EntityStore
 from vegard.fabric.task_allocator import TaskAllocator
 from vegard.fabric.drift_monitor import DriftMonitor
 from vegard.fabric.attestation import AttestationService
@@ -17,8 +17,6 @@ from vegard.fabric.transport import TransportBus
 __all__ = [
     "Mesh",
     "EntityStore",
-    "EntityStoreConfig",
-    "MeshConfig",
     "TaskAllocator",
     "DriftMonitor",
     "AttestationService",

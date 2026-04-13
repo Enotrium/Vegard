@@ -6,7 +6,7 @@ MVP: Orchestrates the scan loop without computing anything.
 import time
 import threading
 from typing import Optional, Callable
-from syndar.mvp.mesh import SimpleMesh, DroneState, Position, SoilPrediction
+from vegard.mvp.mesh import SimpleMesh, DroneState, Position, SoilPrediction
 
 
 class SimpleNodeAgent:

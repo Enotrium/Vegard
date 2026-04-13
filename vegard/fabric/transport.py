@@ -14,8 +14,8 @@ import grpc
 import structlog
 from paho.mqtt import client as mqtt
 
-from syndar.exceptions import TransportError
-from syndar.fabric.grpc_services import register_services
+from vegard.exceptions import TransportError
+from vegard.fabric.grpc_services import register_services
 
 logger = structlog.get_logger()
 
@@ -33,7 +33,7 @@ class TransportConfig:
     mqtt_port: int = 1883
     mqtt_username: Optional[str] = None
     mqtt_password: Optional[str] = None
-    mqtt_client_id: str = "syndar-node"
+    mqtt_client_id: str = "vegard-node"
     mqtt_qos: int = 1
 
     # Protocol selection
@@ -215,7 +215,7 @@ class TransportBus:
         """Publish via gRPC"""
         try:
             # Import compiled proto
-            from syndar.proto import transport_pb2
+            from vegard.proto import transport_pb2
 
             # Serialize payload to bytes
             message = json.dumps(payload, default=str).encode("utf-8")
@@ -290,7 +290,7 @@ class TransportBus:
     ) -> dict[str, Any]:
         """Make RPC call to target"""
         try:
-            from syndar.proto import transport_pb2
+            from vegard.proto import transport_pb2
 
             # Serialize payload
             message = json.dumps(payload, default=str).encode("utf-8")

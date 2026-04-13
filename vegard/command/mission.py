@@ -11,7 +11,7 @@ from typing import Optional
 import structlog
 from pydantic import BaseModel, Field
 
-from syndar.fabric.task_allocator import (
+from vegard.fabric.task_allocator import (
     SpectralConfig,
     TaskAllocator,
     TaskRequest,

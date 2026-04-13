@@ -2,7 +2,7 @@
 
 import pytest
 
-from syndar.auth import AuthManager, AuthConfig, User
+from vegard.auth import AuthManager, AuthConfig, User
 
 
 @pytest.fixture

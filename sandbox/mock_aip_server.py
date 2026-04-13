@@ -1,6 +1,6 @@
 """Mock AIP Server - Minimal FastAPI for testing Vegard integration
 
-Implements /api/syndar/ingest and related endpoints for
+Implements /api/vegard/ingest and related endpoints for
 end-to-end testing without full AIP deployment.
 """
 
@@ -34,9 +34,9 @@ _field_status: dict[str, dict] = defaultdict(
 class SoilIngestPayload(BaseModel):
     """AIP soil prediction payload"""
 
-    syndar_scan_id: str
-    syndar_drone_id: str
-    syndar_timestamp_ms: int
+    vegard_scan_id: str
+    vegard_drone_id: str
+    vegard_timestamp_ms: int
     field_id: str
     farm_id: Optional[str] = None
     nitrogen_mg_kg: Optional[float] = None
@@ -77,8 +77,8 @@ async def health_check():
     }
 
 
-@app.get("/api/syndar/health")
-async def syndar_health():
+@app.get("/api/vegard/health")
+async def vegard_health():
     """Vegard-specific health check"""
     return {
         "ingest_endpoint_active": True,
@@ -89,7 +89,7 @@ async def syndar_health():
     }
 
 
-@app.post("/api/syndar/ingest")
+@app.post("/api/vegard/ingest")
 async def ingest(payload: SoilIngestPayload, request: Request):
     """Ingest single soil prediction"""
     received_at = int(time.time() * 1000)
@@ -104,25 +104,25 @@ async def ingest(payload: SoilIngestPayload, request: Request):
     # Update field status
     _field_status[payload.field_id]["scanned"] = True
     _field_status[payload.field_id]["prediction_count"] += 1
-    _field_status[payload.field_id]["last_scan_ms"] = payload.syndar_timestamp_ms
+    _field_status[payload.field_id]["last_scan_ms"] = payload.vegard_timestamp_ms
 
     logger.info(
         "Payload ingested",
-        scan_id=payload.syndar_scan_id,
+        scan_id=payload.vegard_scan_id,
         field_id=payload.field_id,
-        drone_id=payload.syndar_drone_id,
+        drone_id=payload.vegard_drone_id,
         land_value=payload.land_value_score,
     )
 
     return {
         "status": "accepted",
-        "scan_id": payload.syndar_scan_id,
+        "scan_id": payload.vegard_scan_id,
         "aip_record_id": f"aip-{received_at}",
         "received_at_ms": received_at,
     }
 
 
-@app.post("/api/syndar/ingest/batch")
+@app.post("/api/vegard/ingest/batch")
 async def ingest_batch(payload: BatchIngestPayload, request: Request):
     """Ingest batch of soil predictions"""
     received_at = int(time.time() * 1000)
@@ -138,7 +138,7 @@ async def ingest_batch(payload: BatchIngestPayload, request: Request):
 
             _field_status[p.field_id]["scanned"] = True
             _field_status[p.field_id]["prediction_count"] += 1
-            _field_status[p.field_id]["last_scan_ms"] = p.syndar_timestamp_ms
+            _field_status[p.field_id]["last_scan_ms"] = p.vegard_timestamp_ms
 
             accepted += 1
         except Exception as e:
@@ -160,7 +160,7 @@ async def ingest_batch(payload: BatchIngestPayload, request: Request):
     }
 
 
-@app.get("/api/syndar/fields/{field_id}/status")
+@app.get("/api/vegard/fields/{field_id}/status")
 async def get_field_status(field_id: str):
     """Get field scan status"""
     status = _field_status.get(field_id)
@@ -174,7 +174,7 @@ async def get_field_status(field_id: str):
     }
 
 
-@app.get("/api/syndar/payloads")
+@app.get("/api/vegard/payloads")
 async def list_payloads(
     field_id: Optional[str] = None,
     limit: int = 100,
@@ -197,7 +197,7 @@ async def list_payloads(
     }
 
 
-@app.get("/api/syndar/stats")
+@app.get("/api/vegard/stats")
 async def get_stats():
     """Get ingestion statistics"""
     return {
@@ -220,7 +220,7 @@ async def get_stats():
     }
 
 
-@app.post("/api/syndar/reset")
+@app.post("/api/vegard/reset")
 async def reset():
     """Reset all stored data (for testing)"""
     global _received_payloads, _field_status
@@ -235,7 +235,7 @@ async def reset():
     return {"status": "reset"}
 
 
-@app.post("/api/syndar/export")
+@app.post("/api/vegard/export")
 async def export_data(output_path: Optional[str] = None):
     """Export all received data to file"""
     if not output_path:

@@ -11,9 +11,9 @@ from pathlib import Path
 import httpx
 import structlog
 
-from syndar.command.aip_bridge import AIPBridge, AIPBridgeConfig
-from syndar.fabric.attestation import AttestationService
-from syndar.fabric.mesh import EntityState, Position, SoilPrediction
+from vegard.command.aip_bridge import AIPBridge, AIPBridgeConfig
+from vegard.fabric.attestation import AttestationService
+from vegard.fabric.mesh import EntityState, Position, SoilPrediction
 
 logger = structlog.get_logger()
 
@@ -24,7 +24,7 @@ async def test_single_ingest(mock_aip_url: str) -> bool:
 
     config = AIPBridgeConfig(
         base_url=mock_aip_url,
-        ingest_endpoint="/api/syndar/ingest",
+        ingest_endpoint="/api/vegard/ingest",
     )
 
     bridge = AIPBridge(config=config)
@@ -70,7 +70,7 @@ async def test_batch_ingest(mock_aip_url: str) -> bool:
 
     config = AIPBridgeConfig(
         base_url=mock_aip_url,
-        ingest_endpoint="/api/syndar/ingest",
+        ingest_endpoint="/api/vegard/ingest",
         batch_size=5,
         batch_interval_s=1.0,
     )
@@ -127,7 +127,7 @@ async def test_signed_ingest(mock_aip_url: str) -> bool:
 
     config = AIPBridgeConfig(
         base_url=mock_aip_url,
-        ingest_endpoint="/api/syndar/ingest",
+        ingest_endpoint="/api/vegard/ingest",
     )
 
     bridge = AIPBridge(config=config, attestation=attestation)
@@ -245,7 +245,7 @@ async def run_all_tests(mock_aip_url: str) -> dict:
     # Reset mock server
     try:
         async with httpx.AsyncClient() as client:
-            await client.post(f"{mock_aip_url}/api/syndar/reset")
+            await client.post(f"{mock_aip_url}/api/vegard/reset")
     except Exception as e:
         logger.warning("Failed to reset mock server", error=str(e))
 
@@ -312,7 +312,7 @@ async def main():
         # Export final stats from mock server
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(f"{args.aip_url}/api/syndar/stats")
+                response = await client.get(f"{args.aip_url}/api/vegard/stats")
                 if response.status_code == 200:
                     stats = response.json()
                     print("\nMock AIP Server Stats:")

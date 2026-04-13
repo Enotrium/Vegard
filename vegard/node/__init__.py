@@ -10,7 +10,7 @@ Components:
 - HSIClient: Interface to soil prediction model
 """
 
-from syndar.node.node_agent import NodeAgent
-from syndar.node.spectral_bridge import SpectralBridge
+from vegard.node.node_agent import NodeAgent
+from vegard.node.spectral_bridge import SpectralBridge
 
 __all__ = ["NodeAgent", "SpectralBridge"]

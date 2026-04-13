@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package syndar.api.v1;
+package vegard.api.v1;
 
-option go_package = "github.com/EnotriumSyndicate/Vegard/syndar/proto";
+option go_package = "github.com/EnotriumSyndicate/Vegard/vegard/proto";
 
 // Geographic position with altitude
 message Position {

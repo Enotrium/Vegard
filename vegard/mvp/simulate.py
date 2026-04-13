@@ -2,7 +2,7 @@
 """MVP Fleet Simulator - Runs end-to-end in seconds
 
 Usage:
-    python -m syndar.mvp.simulate
+    python -m vegard.mvp.simulate
 
 This spins up fake drones, assigns tasks, runs the scan loop,
 and delivers results to AIP.
@@ -30,11 +30,11 @@ def run_simulation(
     print("=" * 50)
     
     # Import MVP modules
-    from syndar.mvp.mesh import SimpleMesh, Position
-    from syndar.mvp.task_allocator import Task, SimpleTaskAllocator
-    from syndar.mvp.node_agent import SimpleNodeAgent
-    from syndar.mvp.aip_bridge import SimpleAIPBridge
-    from syndar.mvp.drift_monitor import SimpleDriftMonitor
+    from vegard.mvp.mesh import SimpleMesh, Position
+    from vegard.mvp.task_allocator import Task, SimpleTaskAllocator
+    from vegard.mvp.node_agent import SimpleNodeAgent
+    from vegard.mvp.aip_bridge import SimpleAIPBridge
+    from vegard.mvp.drift_monitor import SimpleDriftMonitor
     
     # Setup
     mesh = SimpleMesh()
@@ -188,7 +188,7 @@ def run_simulation(
     # Check AIP received data
     try:
         import requests
-        resp = requests.get(f"{aip_url}/api/syndar/stats", timeout=5)
+        resp = requests.get(f"{aip_url}/api/vegard/stats", timeout=5)
         if resp.status_code == 200:
             stats = resp.json()
             print(f"\n📡 AIP Server Stats:")

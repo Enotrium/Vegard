@@ -11,8 +11,8 @@ from typing import AsyncIterator
 import grpc
 import structlog
 
-from syndar.exceptions import TransportError
-from syndar.proto import transport_pb2, transport_pb2_grpc
+from vegard.exceptions import TransportError
+from vegard.proto import transport_pb2, transport_pb2_grpc, entity_pb2
 
 logger = structlog.get_logger()
 
@@ -101,7 +101,7 @@ class MeshService(transport_pb2_grpc.MeshServiceServicer):
 
     async def QueryEntities(
         self, request: transport_pb2.BytesMessage, context: grpc.ServicerContext
-    ) -> transport_pb2.EntityHistory:
+    ) -> entity_pb2.EntityHistory:
         """Query entity history"""
         try:
             query_data = json.loads(request.data.decode("utf-8"))
@@ -109,7 +109,7 @@ class MeshService(transport_pb2_grpc.MeshServiceServicer):
             
             # Get entity history from mesh
             if self.mesh:
-                from syndar.fabric.mesh import EntityState
+                from vegard.fabric.mesh import EntityState
                 
                 history = await self.mesh.store.get_history(
                     entity_id, 
@@ -121,12 +121,12 @@ class MeshService(transport_pb2_grpc.MeshServiceServicer):
                 for entity in history:
                     states.append(json.dumps(entity.model_dump(), default=str).encode("utf-8"))
                 
-                return transport_pb2.EntityHistory(
+                return entity_pb2.EntityHistory(
                     entity_id=entity_id,
                     states=states,
                 )
             else:
-                return transport_pb2.EntityHistory(entity_id=entity_id)
+                return entity_pb2.EntityHistory(entity_id=entity_id)
         except Exception as e:
             logger.error("QueryEntities failed", error=str(e))
             raise TransportError(f"QueryEntities failed: {str(e)}") from e
@@ -146,7 +146,7 @@ class MeshService(transport_pb2_grpc.MeshServiceServicer):
         if not self.mesh:
             return
         
-        from syndar.fabric.mesh import EntityState, Position
+        from vegard.fabric.mesh import EntityState, Position
         
         # Convert dict to EntityState
         entity = EntityState(
@@ -189,7 +189,7 @@ class TaskService(transport_pb2_grpc.TaskServiceServicer):
         try:
             task_data = json.loads(request.data.decode("utf-8"))
             
-            from syndar.fabric.task_allocator import TaskRequest
+            from vegard.fabric.task_allocator import TaskRequest
             task = TaskRequest(**task_data)
             
             await self.task_allocator.publish_task(task)
@@ -210,7 +210,7 @@ class TaskService(transport_pb2_grpc.TaskServiceServicer):
         try:
             bid_data = json.loads(request.data.decode("utf-8"))
             
-            from syndar.fabric.task_allocator import TaskBid
+            from vegard.fabric.task_allocator import TaskBid
             bid = TaskBid(**bid_data)
             
             await self.task_allocator.submit_bid(bid)
@@ -264,7 +264,7 @@ class TaskService(transport_pb2_grpc.TaskServiceServicer):
         try:
             result_data = json.loads(request.data.decode("utf-8"))
             
-            from syndar.fabric.task_allocator import TaskResult
+            from vegard.fabric.task_allocator import TaskResult
             result = TaskResult(**result_data)
             
             await self.task_allocator.complete_task(result)
@@ -310,7 +310,7 @@ class DriftService(transport_pb2_grpc.DriftServiceServicer):
                 # Process drift signal
                 signal_data = json.loads(request.data.decode("utf-8"))
                 
-                from syndar.fabric.drift_monitor import NodeDriftSignal
+                from vegard.fabric.drift_monitor import NodeDriftSignal
                 signal = NodeDriftSignal(**signal_data)
                 
                 await self.drift_monitor.report_signal(signal)

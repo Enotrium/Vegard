@@ -3,8 +3,8 @@
 import asyncio
 import pytest
 
-from syndar.fabric.mesh import EntityStore, EntityState, Mesh, MeshConfig, Position
-from syndar.fabric.transport import TransportBus, TransportConfig
+from vegard.fabric.mesh import EntityStore, EntityState, Mesh, MeshConfig, Position
+from vegard.fabric.transport import TransportBus, TransportConfig
 
 
 @pytest.mark.asyncio

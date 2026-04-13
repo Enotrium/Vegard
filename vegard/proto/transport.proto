@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package syndar.api.v1;
+package vegard.api.v1;
 
-import "syndar/proto/common.proto";
-import "syndar/proto/entity.proto";
+import "vegard/proto/common.proto";
+import "vegard/proto/entity.proto";
 
-option go_package = "github.com/EnotriumSyndicate/Vegard/syndar/proto";
+option go_package = "github.com/EnotriumSyndicate/Vegard/vegard/proto";
 
 // Wrapper messages for serialized data
 message BytesMessage {
@@ -145,7 +145,7 @@ message AlertSubscription {
 }
 
 // AIPBridgeService - REST fallback for AIP integration
-// These messages map to REST API at /api/syndar/ingest
+// These messages map to REST API at /api/vegard/ingest
 service AIPBridgeService {
   // Ingest soil predictions
   rpc IngestSoil(BytesMessage) returns (IngestAck);

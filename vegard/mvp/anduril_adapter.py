@@ -30,7 +30,7 @@ class TaskStatus(Enum):
 class AndurilTask:
     """Maps to anduril.taskmanager.v1.Task"""
     task_id: str
-    task_type: str  # "syndar/field_scan"
+    task_type: str  # "vegard/field_scan"
     entity_id: str  # drone assigned to
     status: TaskStatus
     
@@ -40,9 +40,9 @@ class AndurilTask:
     created_at_ms: int
     updated_at_ms: int
     
-    def to_syndar_task(self):
+    def to_vegard_task(self):
         """Convert to Vegard MVP Task"""
-        from syndar.mvp.task_allocator import Task
+        from vegard.mvp.task_allocator import Task
         params = self.parameters
         return Task(
             task_id=self.task_id,
@@ -71,9 +71,9 @@ class AndurilEntityState:
     
     timestamp_ms: int
     
-    def to_syndar_state(self):
+    def to_vegard_state(self):
         """Convert to Vegard DroneState"""
-        from syndar.mvp.mesh import DroneState, Position
+        from vegard.mvp.mesh import DroneState, Position
         return DroneState(
             drone_id=self.entity_id,
             position=Position(
@@ -165,7 +165,7 @@ class AndurilTaskManager:
         
         task = AndurilTask(
             task_id=task_id,
-            task_type="syndar/field_scan",
+            task_type="vegard/field_scan",
             entity_id="",  # Not assigned yet
             status=TaskStatus.TASK_STATUS_PENDING,
             parameters=parameters,
@@ -203,16 +203,16 @@ class VegardAndurilBridge:
     
     def __init__(self, task_manager: AndurilTaskManager):
         self.task_manager = task_manager
-        self._syndar_allocator = None  # Will be set
+        self._vegard_allocator = None  # Will be set
     
     def enable_for_allocator(self, allocator):
         """Connect to Vegard SimpleTaskAllocator"""
-        self._syndar_allocator = allocator
+        self._vegard_allocator = allocator
         
         # Subscribe to allocator to assign via Anduril pattern
         # (In real code, this would wire up the streams)
     
-    def create_syndar_task(self, task: "Task") -> AndurilTask:
+    def create_vegard_task(self, task: "Task") -> AndurilTask:
         """Convert Vegard Task to Anduril format and register"""
         return self.task_manager.create_task({
             "field_id": task.field_id,
@@ -230,8 +230,8 @@ class VegardAndurilBridge:
         
         def listen_loop():
             for anduril_task in stream.listen():
-                syndar_task = anduril_task.to_syndar_task()
-                on_task(syndar_task)
+                vegard_task = anduril_task.to_vegard_task()
+                on_task(vegard_task)
         
         import threading
         threading.Thread(target=listen_loop, daemon=True).start()
@@ -262,7 +262,7 @@ Usage with Vegard MVP:
     bridge.start_agent_listener("drone-001", on_task_assigned)
     
     # Create tasks through Anduril API
-    anduril_task = bridge.create_syndar_task(
+    anduril_task = bridge.create_vegard_task(
         Task("task-1", "field-1", 39.0, -77.0)
     )
     

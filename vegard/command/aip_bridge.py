@@ -1,6 +1,6 @@
 """AIP Bridge - Clean Vegard→AIP data pipeline
 
-POSTs structured SoilPrediction payloads to AIP's `/api/syndar/ingest`.
+POSTs structured SoilPrediction payloads to AIP's `/api/vegard/ingest`.
 Translates Vegard entity model to AIP farm pipeline schema.
 Zero circular coupling - AIP never imports Vegard.
 """
@@ -15,8 +15,8 @@ import structlog
 from pydantic import BaseModel, Field
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from syndar.fabric.attestation import AttestationService, SignedPayload
-from syndar.fabric.mesh import EntityState
+from vegard.fabric.attestation import AttestationService, SignedPayload
+from vegard.fabric.mesh import EntityState
 
 logger = structlog.get_logger()
 
@@ -25,9 +25,9 @@ class AIPSoilPayload(BaseModel):
     """AIP-compatible soil prediction payload"""
 
     # AIP schema fields
-    syndar_scan_id: str
-    syndar_drone_id: str
-    syndar_timestamp_ms: int
+    vegard_scan_id: str
+    vegard_drone_id: str
+    vegard_timestamp_ms: int
     field_id: str
     farm_id: Optional[str] = None
 
@@ -67,7 +67,7 @@ class AIPBridgeConfig:
     """AIP bridge configuration"""
 
     base_url: str = "http://localhost:3000"
-    ingest_endpoint: str = "/api/syndar/ingest"
+    ingest_endpoint: str = "/api/vegard/ingest"
     api_key: Optional[str] = None
     timeout_s: float = 30.0
     max_retries: int = 3
@@ -202,9 +202,9 @@ class AIPBridge:
                     heavy_metals_detected = True
 
         return AIPSoilPayload(
-            syndar_scan_id=soil.scan_id if soil else "unknown",
-            syndar_drone_id=entity.entity_id,
-            syndar_timestamp_ms=entity.timestamp_ms,
+            vegard_scan_id=soil.scan_id if soil else "unknown",
+            vegard_drone_id=entity.entity_id,
+            vegard_timestamp_ms=entity.timestamp_ms,
             field_id=soil.field_id if soil else "unknown",
             nitrogen_mg_kg=nitrogen,
             carbon_percent=carbon,
@@ -247,7 +247,7 @@ class AIPBridge:
 
             logger.debug(
                 "Payload ingested to AIP",
-                scan_id=payload.syndar_scan_id,
+                scan_id=payload.vegard_scan_id,
                 field_id=payload.field_id,
             )
             return True
@@ -257,7 +257,7 @@ class AIPBridge:
             logger.error(
                 "AIP ingest failed",
                 status_code=e.response.status_code,
-                scan_id=payload.syndar_scan_id,
+                scan_id=payload.vegard_scan_id,
             )
             raise
 

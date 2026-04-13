@@ -25,7 +25,7 @@ class User:
 class AuthConfig(BaseModel):
     """Authentication configuration"""
     
-    secret_key: str = "syndar-secret-key-change-in-production"
+    secret_key: str = "vegard-secret-key-change-in-production"
     algorithm: str = "HS256"
     token_expiration_hours: int = 24
     enable_auth: bool = False

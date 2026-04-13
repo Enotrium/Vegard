@@ -3,12 +3,12 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from syndar.command.api import app, setup_api
-from syndar.command.fop import FusedFieldPicture
-from syndar.command.mission import MissionPlanner
-from syndar.fabric.drift_monitor import DriftMonitor, DriftThresholds
-from syndar.fabric.mesh import Mesh, MeshConfig
-from syndar.fabric.task_allocator import TaskAllocator
+from vegard.command.api import app, setup_api
+from vegard.command.fop import FusedFieldPicture
+from vegard.command.mission import MissionPlanner
+from vegard.fabric.drift_monitor import DriftMonitor, DriftThresholds
+from vegard.fabric.mesh import Mesh, MeshConfig
+from vegard.fabric.task_allocator import TaskAllocator
 
 
 @pytest.fixture

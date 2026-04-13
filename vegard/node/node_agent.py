@@ -13,10 +13,10 @@ from typing import Optional
 import structlog
 from pydantic import BaseModel
 
-from syndar.fabric.attestation import AttestationService, SignedPayload
-from syndar.fabric.mesh import EntityState, Position
-from syndar.fabric.task_allocator import TaskProgress, TaskResult
-from syndar.fabric.transport import TransportBus
+from vegard.fabric.attestation import AttestationService, SignedPayload
+from vegard.fabric.mesh import EntityState, Position
+from vegard.fabric.task_allocator import TaskProgress, TaskResult
+from vegard.fabric.transport import TransportBus
 
 logger = structlog.get_logger()
 
@@ -190,7 +190,7 @@ class NodeAgent:
 
     async def _evaluate_task(self, task_payload: dict) -> None:
         """Evaluate and bid on a task"""
-        from syndar.fabric.task_allocator import TaskBid, TaskRequest
+        from vegard.fabric.task_allocator import TaskBid, TaskRequest
 
         # Parse task request
         try:
@@ -227,7 +227,7 @@ class NodeAgent:
         self, entity: EntityState, task: "TaskRequest"
     ) -> "TaskBid":
         """Calculate bid cost for a task"""
-        from syndar.fabric.task_allocator import TaskBid
+        from vegard.fabric.task_allocator import TaskBid
 
         # Calculate distance to task center
         if task.target_polygon:

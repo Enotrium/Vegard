@@ -7,6 +7,7 @@ Designed to be swappable for PostgreSQL in production.
 import asyncio
 import json
 import sqlite3
+import threading
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -23,7 +24,7 @@ logger = structlog.get_logger()
 class DatabaseConfig:
     """Database configuration"""
 
-    path: str = "syndar.db"
+    path: str = "vegard.db"
     enable_wal: bool = True
     connection_pool_size: int = 5
 
@@ -33,7 +34,7 @@ class Database:
 
     def __init__(self, config: Optional[DatabaseConfig] = None):
         self.config = config or DatabaseConfig()
-        self._local = asyncio.local()
+        self._local = threading.local()
         self._path = Path(self.config.path)
         self._initialized = False
 
@@ -296,6 +297,12 @@ class Database:
         # Serialize polygon
         target_polygon = json.dumps(task.target_polygon)
         
+        # Get optional fields with defaults
+        status = getattr(task, "status", "pending")
+        entity_id = getattr(task, "entity_id", None)
+        assigned_at_ms = getattr(task, "assigned_at_ms", None)
+        completed_at_ms = getattr(task, "completed_at_ms", None)
+        
         cursor.execute("""
             INSERT INTO tasks (
                 task_id, field_id, target_polygon, priority, deadline_ms,
@@ -319,10 +326,10 @@ class Database:
             spectral_config,
             task.mission_id,
             task.requested_by,
-            task.status,
-            task.entity_id,
-            task.assigned_at_ms,
-            task.completed_at_ms,
+            status,
+            entity_id,
+            assigned_at_ms,
+            completed_at_ms,
             now_ms,
             now_ms,
         ))

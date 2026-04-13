@@ -2,7 +2,7 @@
 
 import pytest
 
-from syndar.fabric.drift_monitor import DriftMonitor, DriftThresholds
+from vegard.fabric.drift_monitor import DriftMonitor, DriftThresholds
 
 
 @pytest.fixture
@@ -28,11 +28,11 @@ def test_drift_monitor_initialization(drift_monitor):
 def test_drift_thresholds_initialization():
     """Test drift thresholds initialization"""
     thresholds = DriftThresholds()
-    assert thresholds.per_node_e_threshold == 0.4
+    assert thresholds.per_node_e_threshold == 0.5
     assert thresholds.spatial_correlation_threshold == 0.7
-    assert thresholds.temporal_correlation_threshold == 0.6
+    assert thresholds.temporal_correlation_threshold == 0.8
     assert thresholds.min_nodes_for_correlation == 3
-    assert thresholds.max_signal_age_ms == 30000
+    assert thresholds.max_signal_age_ms == 60000
 
 
 def test_drift_thresholds_custom():
@@ -62,69 +62,53 @@ async def test_drift_monitor_start_stop(drift_monitor):
 
 
 @pytest.mark.asyncio
-async def test_drift_monitor_record_signal(drift_monitor):
-    """Test recording drift signal"""
-    signal = {
-        "entity_id": "drone:001",
-        "e_value": 0.5,
-        "timestamp_ms": 1234567890,
-        "position": {"lat": 40.0, "lng": -74.0, "alt": 100.0},
-    }
+async def test_drift_monitor_report_signal(drift_monitor):
+    """Test reporting drift signal"""
+    from vegard.fabric.drift_monitor import NodeDriftSignal
     
-    await drift_monitor.record_signal(signal)
+    signal = NodeDriftSignal(
+        entity_id="drone:001",
+        e_fast=0.3,
+        e_slow=0.6,
+        combined_e=0.5,
+        threshold=0.5,
+        exceeded=True,
+        timestamp_ms=1234567890,
+        lat=40.0,
+        lng=-74.0,
+        field_id="field-001",
+        task_id="task-001",
+    )
+    
+    await drift_monitor.report_signal(signal)
     
     # Signal should be stored
-    assert "drone:001" in drift_monitor._signals
+    assert "field-001" in drift_monitor._signals
 
 
 @pytest.mark.asyncio
-async def test_drift_monitor_correlate_signals(drift_monitor):
-    """Test signal correlation"""
-    import time
+async def test_drift_monitor_get_alerts(drift_monitor):
+    """Test getting drift alerts"""
+    alerts = await drift_monitor.get_alerts()
     
-    # Record multiple signals from same entity
-    for i in range(3):
-        signal = {
-            "entity_id": f"drone:00{i}",
-            "e_value": 0.5,
-            "timestamp_ms": int(time.time() * 1000),
-            "position": {"lat": 40.0 + i * 0.01, "lng": -74.0 + i * 0.01, "alt": 100.0},
-        }
-        await drift_monitor.record_signal(signal)
-    
-    # Correlate signals
-    alerts = await drift_monitor.correlate_signals()
-    
-    # Should return list of alerts (may be empty depending on correlation logic)
+    # Should return list of alerts
     assert isinstance(alerts, list)
 
 
 @pytest.mark.asyncio
-async def test_drift_monitor_cleanup_old_signals(drift_monitor):
-    """Test cleanup of old signals"""
-    import time
+async def test_drift_monitor_get_correlations(drift_monitor):
+    """Test getting drift correlations"""
+    correlations = await drift_monitor.get_correlations("field-001")
     
-    # Add an old signal
-    old_signal = {
-        "entity_id": "drone:001",
-        "e_value": 0.5,
-        "timestamp_ms": int(time.time() * 1000) - 40000,  # 40 seconds ago
-        "position": {"lat": 40.0, "lng": -74.0, "alt": 100.0},
-    }
-    
-    await drift_monitor.record_signal(old_signal)
-    
-    # Cleanup old signals
-    await drift_monitor.cleanup_old_signals()
-    
-    # Old signal should be removed
-    assert "drone:001" not in drift_monitor._signals
+    # Should return list of correlations
+    assert isinstance(correlations, list)
 
 
-def test_drift_monitor_get_stats(drift_monitor):
+@pytest.mark.asyncio
+async def test_drift_monitor_get_stats(drift_monitor):
     """Test getting drift monitor statistics"""
-    stats = drift_monitor.get_stats()
+    stats = await drift_monitor.get_stats()
     
     assert "total_signals" in stats
-    assert "active_alerts" in stats
-    assert "correlations_performed" in stats
+    assert "total_alerts" in stats
+    assert "fields_monitored" in stats

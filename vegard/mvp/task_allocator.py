@@ -5,7 +5,7 @@ MVP: No auctions, no preemption. Just: who is closest and idle?
 
 import math
 from typing import Optional
-from syndar.mvp.mesh import SimpleMesh, DroneState
+from vegard.mvp.mesh import SimpleMesh, DroneState
 
 
 class Task:
@@ -97,7 +97,7 @@ class SimpleTaskAllocator:
                 assignments.append((task, drone))
                 
                 # Update drone state
-                from syndar.mvp.mesh import Position
+                from vegard.mvp.mesh import Position
                 drone.status = "assigned"
                 drone.current_task_id = task.id
                 self.mesh.update(drone.drone_id, drone)

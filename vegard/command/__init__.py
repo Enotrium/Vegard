@@ -7,8 +7,8 @@ The AIP-facing interface:
 - Operator API: REST + WebSocket interface
 """
 
-from syndar.command.fop import FusedFieldPicture
-from syndar.command.mission import MissionPlanner
-from syndar.command.aip_bridge import AIPBridge
+from vegard.command.fop import FusedFieldPicture
+from vegard.command.mission import MissionPlanner
+from vegard.command.aip_bridge import AIPBridge
 
 __all__ = ["FusedFieldPicture", "MissionPlanner", "AIPBridge"]
