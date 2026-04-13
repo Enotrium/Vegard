@@ -15,6 +15,7 @@ import structlog
 from paho.mqtt import client as mqtt
 
 from syndar.exceptions import TransportError
+from syndar.fabric.grpc_services import register_services
 
 logger = structlog.get_logger()
 
@@ -43,7 +44,14 @@ class TransportConfig:
 class TransportBus:
     """Multi-protocol transport abstraction"""
 
-    def __init__(self, config: Optional[TransportConfig] = None):
+    def __init__(
+        self,
+        config: Optional[TransportConfig] = None,
+        mesh=None,
+        task_allocator=None,
+        drift_monitor=None,
+        aip_bridge=None,
+    ):
         self.config = config or TransportConfig()
         self._mqtt_client: Optional[mqtt.Client] = None
         self._grpc_server: Optional[Any] = None
@@ -51,6 +59,12 @@ class TransportBus:
         self._subscribed_topics: set[str] = set()
         self._lock = asyncio.Lock()
         self._running = False
+        
+        # Service dependencies for gRPC
+        self._mesh = mesh
+        self._task_allocator = task_allocator
+        self._drift_monitor = drift_monitor
+        self._aip_bridge = aip_bridge
 
     async def start(self) -> None:
         """Start transport services"""
@@ -146,8 +160,15 @@ class TransportBus:
                 grpc.ThreadPoolExecutor(max_workers=self.config.grpc_max_workers)
             )
 
-            # Add services when proto stubs are imported
-            # For now, just start the server
+            # Register services
+            register_services(
+                self._grpc_server,
+                mesh=self._mesh,
+                task_allocator=self._task_allocator,
+                drift_monitor=self._drift_monitor,
+                aip_bridge=self._aip_bridge,
+            )
+
             self._grpc_server.add_insecure_port(f"[::]:{self.config.grpc_port}")
             self._grpc_server.start()
 

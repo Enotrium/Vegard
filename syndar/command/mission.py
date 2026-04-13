@@ -213,12 +213,22 @@ class MissionPlanner:
         if not mission:
             return None
 
-        # Count completed tasks
-        # TODO: Query task allocator for actual status
+        # Query task allocator for actual status
+        completed_count = 0
+        total_tasks = len(mission["task_ids"])
+
+        for task_id in mission["task_ids"]:
+            task = self.task_allocator.get_task(task_id)
+            if task and task.status in ["complete"]:
+                completed_count += 1
+
+        completion_pct = (completed_count / total_tasks * 100) if total_tasks > 0 else 0.0
+
         return {
             **mission,
-            "tasks_total": len(mission["task_ids"]),
-            "estimated_completion_pct": 0.0,  # TODO: Calculate from task statuses
+            "tasks_total": total_tasks,
+            "tasks_completed": completed_count,
+            "estimated_completion_pct": completion_pct,
         }
 
     async def cancel_mission(self, mission_id: str) -> bool:
@@ -229,10 +239,9 @@ class MissionPlanner:
 
         mission["status"] = "cancelled"
 
-        # Cancel all tasks
+        # Cancel all tasks through task allocator
         for task_id in mission["task_ids"]:
-            # TODO: Cancel through task allocator
-            pass
+            await self.task_allocator.cancel_task(task_id)
 
         logger.info("Mission cancelled", mission_id=mission_id)
         return True

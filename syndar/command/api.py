@@ -7,13 +7,16 @@
 - WebSocket /stream - Real-time entity updates
 """
 
+import asyncio
 import json
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 import structlog
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 
 from syndar.command.fop import FusedFieldPicture
 from syndar.command.mission import MissionPlanner
@@ -21,6 +24,25 @@ from syndar.fabric.drift_monitor import DriftMonitor
 from syndar.fabric.mesh import Mesh
 
 logger = structlog.get_logger()
+
+
+# Request/Response Models
+class TaskRequest(BaseModel):
+    """Task creation request"""
+    field_id: str
+    field_boundary: list[tuple[float, float]]
+    spectral_config: dict
+    priority: int = Field(default=5, ge=1, le=10)
+    deadline_ms: Optional[int] = None
+
+
+class TaskStatusResponse(BaseModel):
+    """Task status response"""
+    task_id: str
+    status: str
+    entity_id: Optional[str]
+    progress_pct: float
+    updated_at_ms: int
 
 
 # Global state (injected on startup)
@@ -53,6 +75,15 @@ app = FastAPI(
     description="Autonomous Agricultural Intelligence Platform - Drone Fleet Coordination",
     version="0.1.0",
     lifespan=lifespan,
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -173,10 +204,7 @@ async def get_entity_history(
 async def create_task(task_request: dict):
     """Inject a new scan task"""
     if not mission_planner:
-        return JSONResponse(
-            status_code=503,
-            content={"error": "Mission planner not initialized"},
-        )
+        raise HTTPException(status_code=503, detail="Mission planner not initialized")
 
     from syndar.fabric.task_allocator import TaskRequest
 
@@ -191,26 +219,56 @@ async def create_task(task_request: dict):
             "task_id": task.task_id,
         }
     except Exception as e:
-        return JSONResponse(
-            status_code=400,
-            content={"error": f"Invalid task request: {str(e)}"},
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid task request: {str(e)}")
 
 
 @app.get("/tasks/{task_id}/status")
 async def get_task_status(task_id: str):
     """Get task status"""
     if not mission_planner or not mission_planner.task_allocator:
-        return JSONResponse(
-            status_code=503,
-            content={"error": "Task allocator not initialized"},
-        )
+        raise HTTPException(status_code=503, detail="Task allocator not initialized")
 
-    # TODO: Query task status from allocator
+    task = mission_planner.task_allocator.get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
     return {
-        "task_id": task_id,
-        "status": "unknown",
+        "task_id": task.task_id,
+        "status": task.status,
+        "entity_id": task.entity_id,
+        "progress_pct": task.progress_pct,
+        "updated_at_ms": task.updated_at_ms,
     }
+
+
+@app.get("/tasks")
+async def list_tasks(
+    status: Optional[str] = None,
+    field_id: Optional[str] = None,
+    limit: int = Query(default=100, ge=1, le=1000),
+):
+    """List all tasks with optional filtering"""
+    if not mission_planner or not mission_planner.task_allocator:
+        raise HTTPException(status_code=503, detail="Task allocator not initialized")
+
+    tasks = mission_planner.task_allocator.list_tasks(status=status, field_id=field_id, limit=limit)
+    return {
+        "count": len(tasks),
+        "tasks": [json.loads(t.model_dump_json()) for t in tasks],
+    }
+
+
+@app.delete("/tasks/{task_id}")
+async def cancel_task(task_id: str):
+    """Cancel a task"""
+    if not mission_planner or not mission_planner.task_allocator:
+        raise HTTPException(status_code=503, detail="Task allocator not initialized")
+
+    success = await mission_planner.task_allocator.cancel_task(task_id)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found or cannot be cancelled")
+
+    return {"status": "cancelled", "task_id": task_id}
 
 
 @app.get("/drift")

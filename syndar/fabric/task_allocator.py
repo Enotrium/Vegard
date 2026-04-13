@@ -299,3 +299,37 @@ class TaskAllocator:
                     else 0.0
                 ),
             }
+
+    def get_task(self, task_id: str) -> Optional[TaskAssignment]:
+        """Get task by ID"""
+        return self._assignments.get(task_id)
+
+    def list_tasks(
+        self, status: Optional[str] = None, field_id: Optional[str] = None, limit: int = 100
+    ) -> list[TaskAssignment]:
+        """List tasks with optional filtering"""
+        tasks = list(self._assignments.values())
+        
+        if status:
+            tasks = [t for t in tasks if t.status == status]
+        
+        if field_id:
+            tasks = [t for t in tasks if t.task.field_id == field_id]
+        
+        return tasks[:limit]
+
+    async def cancel_task(self, task_id: str) -> bool:
+        """Cancel a task"""
+        if task_id not in self._assignments:
+            return False
+        
+        assignment = self._assignments[task_id]
+        if assignment.status in ["complete", "failed", "cancelled"]:
+            return False
+        
+        # Update status
+        assignment.status = "cancelled"
+        assignment.completed_at_ms = int(time.time() * 1000)
+        
+        logger.info("Task cancelled", task_id=task_id, entity_id=assignment.entity_id)
+        return True
