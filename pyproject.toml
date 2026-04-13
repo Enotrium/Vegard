@@ -40,6 +40,7 @@ dependencies = [
     "aiofiles>=23.2.0",
     "tenacity>=8.2.3",
     "structlog>=23.2.0",
+    "watchdog>=3.0.0",
 ]
 
 [project.optional-dependencies]

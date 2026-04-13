@@ -1,25 +1,48 @@
 """Configuration loader for Syndar
 
 Loads configuration from YAML files with environment variable overrides.
+Supports hot-reload when configuration file changes.
 """
 
+import asyncio
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Callable
 
 import structlog
 import yaml
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 logger = structlog.get_logger()
 
 
-class ConfigLoader:
-    """Load and manage configuration from YAML files"""
+class ConfigFileHandler(FileSystemEventHandler):
+    """Handler for configuration file changes"""
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_loader: "ConfigLoader"):
+        self.config_loader = config_loader
+
+    def on_modified(self, event):
+        """Handle file modification event"""
+        if event.src_path == self.config_loader.config_path:
+            logger.info("Configuration file changed, reloading")
+            self.config_loader.reload()
+
+
+class ConfigLoader:
+    """Load and manage configuration from YAML files with hot-reload support"""
+
+    def __init__(self, config_path: Optional[str] = None, enable_hot_reload: bool = False):
         self.config_path = config_path or self._find_config_file()
         self._config: dict[str, Any] = {}
         self._load_config()
+        
+        self._observer: Optional[Observer] = None
+        self._reload_callbacks: list[Callable[[], None]] = []
+        
+        if enable_hot_reload:
+            self._enable_hot_reload()
 
     def _find_config_file(self) -> str:
         """Find configuration file in standard locations"""
@@ -172,10 +195,45 @@ class ConfigLoader:
         """Get logging configuration"""
         return self.get("logging", default={})
 
-    def reload(self) -> None:
+    def _enable_hot_reload(self) -> None:
+        """Enable file watching for configuration hot-reload"""
+        try:
+            config_file = Path(self.config_path)
+            if not config_file.exists():
+                logger.warning("Config file not found, hot-reload disabled", path=self.config_path)
+                return
+
+            self._observer = Observer()
+            handler = ConfigFileHandler(self)
+            self._observer.schedule(handler, path=str(config_file.parent), recursive=False)
+            self._observer.start()
+            logger.info("Configuration hot-reload enabled", path=self.config_path)
+        except Exception as e:
+            logger.error("Failed to enable hot-reload", error=str(e))
+
+    def disable_hot_reload(self) -> None:
+        """Disable configuration hot-reload"""
+        if self._observer:
+            self._observer.stop()
+            self._observer.join()
+            self._observer = None
+            logger.info("Configuration hot-reload disabled")
+
+    def on_reload(self, callback: Callable[[], None]) -> None:
+        """Register callback to be called when configuration is reloaded"""
+        self._reload_callbacks.append(callback)
+
+    def reload_config(self) -> None:
         """Reload configuration from file"""
         logger.info("Reloading configuration")
         self._load_config()
+        
+        # Notify callbacks
+        for callback in self._reload_callbacks:
+            try:
+                callback()
+            except Exception as e:
+                logger.error("Reload callback failed", error=str(e))
 
 
 # Global configuration instance
