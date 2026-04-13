@@ -1,4 +1,4 @@
-# Syndar - Autonomous Drone Fleet Coordination
+# Vegard - Autonomous Drone Fleet Coordination
 # Core dependencies for production
 
 # gRPC and Protobuf

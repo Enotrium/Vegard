@@ -1,4 +1,4 @@
-"""Mock AIP Server - Minimal FastAPI for testing Syndar integration
+"""Mock AIP Server - Minimal FastAPI for testing Vegard integration
 
 Implements /api/syndar/ingest and related endpoints for
 end-to-end testing without full AIP deployment.
@@ -79,7 +79,7 @@ async def health_check():
 
 @app.get("/api/syndar/health")
 async def syndar_health():
-    """Syndar-specific health check"""
+    """Vegard-specific health check"""
     return {
         "ingest_endpoint_active": True,
         "received_count": len(_received_payloads),

@@ -1,4 +1,4 @@
-"""Test AIP Bridge - End-to-end Syndar→AIP integration test
+"""Test AIP Bridge - End-to-end Vegard→AIP integration test
 
 Tests AIP integration without live AIP by using mock server.
 """
@@ -278,7 +278,7 @@ def print_results(results: dict) -> None:
 
 async def main():
     """CLI entry point"""
-    parser = argparse.ArgumentParser(description="Test Syndar AIP Bridge")
+    parser = argparse.ArgumentParser(description="Test Vegard AIP Bridge")
     parser.add_argument(
         "--aip-url",
         default="http://localhost:3000",

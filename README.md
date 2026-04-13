@@ -1,11 +1,11 @@
-# Syndar
+# Vegard
 
 **Autonomous Agricultural Intelligence Platform — Drone Fleet Coordination & Soil Intelligence Fabric**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Syndar is the autonomous systems coordination layer for the Enotrium agricultural stack. Analogous to Anduril Lattice for defense, Syndar coordinates fleets of UAVs carrying hyperspectral sensors, fuses their data into a shared operational picture, and routes soil intelligence to the AIP supply chain platform.
+Vegard is the autonomous systems coordination layer for the Enotrium agricultural stack. Analogous to Anduril Lattice for defense, Vegard coordinates fleets of UAVs carrying hyperspectral sensors, fuses their data into a shared operational picture, and routes soil intelligence to the AIP supply chain platform.
 
 ## Quick Start
 
@@ -14,7 +14,7 @@ Syndar is the autonomous systems coordination layer for the Enotrium agricultura
 pip install -e .
 pip install -e ../arthedain  # Optional: edge learning dependency
 
-# Start Syndar API
+# Start Vegard API
 python -m syndar.command.api
 
 # Simulate a fleet of 4 drones
@@ -27,7 +27,7 @@ python sandbox/test_aip_bridge.py --aip-url http://localhost:3000
 
 ## Architecture
 
-Syndar is structured in three layers:
+Vegard is structured in three layers:
 
 ### Layer 3 — Node (Edge Intelligence)
 - **NodeAgent**: Drone ↔ fabric bridge, executes scan tasks
@@ -58,7 +58,7 @@ Syndar is structured in three layers:
 ## Repository Structure
 
 ```
-EnotriumSyndicate/Syndar/
+EnotriumSyndicate/Vegard/
 ├── syndar/
 │   ├── node/              # Edge intelligence bridge
 │   ├── fabric/            # Coordination services
@@ -93,11 +93,11 @@ EnotriumSyndicate/Syndar/
 |------|------|
 | `arthedain` | Edge SNN learning algorithm |
 | `Hyperspectral-Restruct` | 3D CNN soil prediction model |
-| **Syndar** | **Fleet coordination** |
+| **Vegard** | **Fleet coordination** |
 | `AIP` | Supply chain command center |
 | `Icarus` | Drone hardware platform (planned) |
 
 ## License
 
 MIT — Enotrium Syndicate
- Syndar
+ Vegard

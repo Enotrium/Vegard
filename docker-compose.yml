@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  syndar-api:
+  vegard-api:
     build: .
-    container_name: syndar-api
+    container_name: vegard-api
     ports:
       - "8000:8000"
       - "50051:50051"
     volumes:
       - ./configs:/app/configs:ro
-      - syndar-data:/var/lib/syndar
-      - syndar-logs:/var/log/syndar
+      - vegard-data:/var/lib/vegard
+      - vegard-logs:/var/log/vegard
     environment:
-      - SYNDAR_CONFIG=/app/configs/default.yaml
+      - VEGARD_CONFIG=/app/configs/default.yaml
       - PYTHONUNBUFFERED=1
     networks:
-      - syndar-network
+      - vegard-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -26,7 +26,7 @@ services:
 
   mqtt-broker:
     image: eclipse-mosquitto:2.0
-    container_name: syndar-mqtt
+    container_name: vegard-mqtt
     ports:
       - "1883:1883"
       - "9001:9001"
@@ -35,12 +35,12 @@ services:
       - mqtt-data:/mosquitto/data
       - mqtt-logs:/mosquitto/log
     networks:
-      - syndar-network
+      - vegard-network
     restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: syndar-prometheus
+    container_name: vegard-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -50,12 +50,12 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     networks:
-      - syndar-network
+      - vegard-network
     restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
-    container_name: syndar-grafana
+    container_name: vegard-grafana
     ports:
       - "3000:3000"
     volumes:
@@ -64,18 +64,18 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
-      - syndar-network
+      - vegard-network
     restart: unless-stopped
     depends_on:
       - prometheus
 
 networks:
-  syndar-network:
+  vegard-network:
     driver: bridge
 
 volumes:
-  syndar-data:
-  syndar-logs:
+  vegard-data:
+  vegard-logs:
   mqtt-data:
   mqtt-logs:
   prometheus-data:

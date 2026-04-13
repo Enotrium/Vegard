@@ -1,1 +1,1 @@
-"""Syndar test suite"""
+"""Vegard test suite"""

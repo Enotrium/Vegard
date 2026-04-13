@@ -16,7 +16,7 @@ async def test_bridge_initialization():
 
 @pytest.mark.asyncio
 async def test_entity_to_payload_conversion():
-    """Test Syndar entity converts to AIP payload"""
+    """Test Vegard entity converts to AIP payload"""
     config = AIPBridgeConfig()
     bridge = AIPBridge(config=config)
 

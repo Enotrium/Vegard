@@ -1,4 +1,4 @@
-"""Fleet Simulator - Syndar Sandbox
+"""Fleet Simulator - Vegard Sandbox
 
 Simulate N virtual drones scanning a field polygon.
 Tests task allocation, mesh gossip, drift correlation without hardware.
@@ -311,7 +311,7 @@ def generate_test_polygon() -> list[tuple[float, float]]:
 
 async def main():
     """CLI entry point"""
-    parser = argparse.ArgumentParser(description="Syndar Fleet Simulator")
+    parser = argparse.ArgumentParser(description="Vegard Fleet Simulator")
     parser.add_argument(
         "--drones",
         type=int,

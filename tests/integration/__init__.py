@@ -1,1 +1,1 @@
-"""Integration tests for Syndar components"""
+"""Integration tests for Vegard components"""

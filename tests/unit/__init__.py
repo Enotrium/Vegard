@@ -1,1 +1,1 @@
-"""Unit tests for Syndar components"""
+"""Unit tests for Vegard components"""

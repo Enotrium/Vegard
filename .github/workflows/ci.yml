@@ -40,18 +40,18 @@ jobs:
       run: |
         python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. proto/common.proto proto/entity.proto proto/drift.proto proto/soil.proto proto/task.proto proto/transport.proto || true
         if [ -d proto ]; then
-          mv proto/*_pb2.py syndar/proto/ 2>/dev/null || true
-          mv proto/*_pb2_grpc.py syndar/proto/ 2>/dev/null || true
+          mv proto/*_pb2.py vegard/proto/ 2>/dev/null || true
+          mv proto/*_pb2_grpc.py vegard/proto/ 2>/dev/null || true
         fi
     
     - name: Run linting with ruff
-      run: ruff check syndar/ || true
+      run: ruff check vegard/ || true
     
     - name: Run type checking with mypy
-      run: mypy syndar/ --ignore-missing-imports || true
+      run: mypy vegard/ --ignore-missing-imports || true
     
     - name: Run tests with pytest
-      run: pytest tests/ -v --cov=syndar --cov-report=xml --cov-report=term || true
+      run: pytest tests/ -v --cov=vegard --cov-report=xml --cov-report=term || true
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -74,4 +74,4 @@ jobs:
       run: docker build -t syndar:latest .
     
     - name: Test Docker image
-      run: docker run --rm syndar:latest python -c "import syndar; print('Syndar imported successfully')"
+      run: docker run --rm syndar:latest python -c "import syndar; print('Vegard imported successfully')"

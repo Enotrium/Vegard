@@ -1,4 +1,4 @@
-# Syndar MVP — Minimum Viable System
+# Vegard MVP — Minimum Viable System
 
 **Goal**: End-to-end working system in 1-2 days. Strip everything non-essential.
 
@@ -77,7 +77,7 @@ Each drone must:
 5. Emit result
 6. Report drift (from Arthedain)
 
-**Syndar responsibility:** Orchestrate the loop, not compute.
+**Vegard responsibility:** Orchestrate the loop, not compute.
 
 **Minimal implementation:**
 ```python

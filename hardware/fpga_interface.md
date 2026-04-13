@@ -2,7 +2,7 @@
 
 ## NodeAgent ↔ Artix-7 Interface
 
-This document specifies the hardware interface between the Syndar NodeAgent and the Xilinx Artix-7 FPGA running the Arthedain SNN.
+This document specifies the hardware interface between the Vegard NodeAgent and the Xilinx Artix-7 FPGA running the Arthedain SNN.
 
 ---
 
@@ -257,7 +257,7 @@ if fpga.drift_exceeded():
 
 int main() {
     // Initialize SPI
-    SyndarFPGA fpga;
+    VegardFPGA fpga;
     fpga.init("/dev/spidev0.0", 10000000);
     
     // Reset and configure
@@ -279,7 +279,7 @@ int main() {
         // Process drift
         for (const auto& trace : traces) {
             if (trace.combined_e > 0.5) {
-                // Report to Syndar fabric
+                // Report to Vegard fabric
                 report_drift(trace);
             }
         }

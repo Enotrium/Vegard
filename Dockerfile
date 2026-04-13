@@ -17,7 +17,7 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir -e .
 
 # Copy application code
-COPY syndar/ ./syndar/
+COPY vegard/ ./vegard/
 COPY proto/ ./proto/
 COPY configs/ ./configs/
 
@@ -33,11 +33,11 @@ RUN python -m grpc_tools.protoc \
     proto/task.proto \
     proto/transport.proto
 
-RUN mv proto/*_pb2.py syndar/proto/ && \
-    mv proto/*_pb2_grpc.py syndar/proto/
+RUN mv proto/*_pb2.py vegard/proto/ && \
+    mv proto/*_pb2_grpc.py vegard/proto/
 
 # Create directories for data
-RUN mkdir -p /var/lib/syndar /var/log/syndar
+RUN mkdir -p /var/lib/vegard /var/log/vegard
 
 # Expose ports
 EXPOSE 50051 8000 1883
@@ -47,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application
-CMD ["uvicorn", "syndar.command.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "vegard.command.api:app", "--host", "0.0.0.0", "--port", "8000"]
