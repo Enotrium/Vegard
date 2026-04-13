@@ -18,6 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from syndar.auth import AuthManager, AuthConfig, get_auth_manager, set_auth_manager
 from syndar.command.fop import FusedFieldPicture
@@ -29,6 +32,7 @@ from syndar.fabric.mesh import Mesh
 logger = structlog.get_logger()
 
 security = HTTPBearer()
+limiter = Limiter(key_func=get_remote_address)
 
 
 # Request/Response Models
@@ -95,6 +99,8 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware
 app.add_middleware(
@@ -107,6 +113,7 @@ app.add_middleware(
 
 
 @app.get("/health")
+@limiter.limit("100/minute")
 async def health_check():
     """Health check endpoint"""
     return {
@@ -117,6 +124,7 @@ async def health_check():
 
 
 @app.get("/fop")
+@limiter.limit("60/minute")
 async def get_fused_picture(
     entity_type: Optional[str] = None,
     include_tracks: bool = True,
@@ -152,6 +160,7 @@ async def get_fop_state():
 
 
 @app.get("/entities")
+@limiter.limit("60/minute")
 async def get_entities(
     entity_type: Optional[str] = None,
     near_lat: Optional[float] = None,
@@ -220,6 +229,7 @@ async def get_entity_history(
 
 
 @app.post("/tasks")
+@limiter.limit("10/minute")
 async def create_task(task_request: dict):
     """Inject a new scan task"""
     if not mission_planner:
