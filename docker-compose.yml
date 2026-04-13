@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  syndar-api:
+    build: .
+    container_name: syndar-api
+    ports:
+      - "8000:8000"
+      - "50051:50051"
+    volumes:
+      - ./configs:/app/configs:ro
+      - syndar-data:/var/lib/syndar
+      - syndar-logs:/var/log/syndar
+    environment:
+      - SYNDAR_CONFIG=/app/configs/default.yaml
+      - PYTHONUNBUFFERED=1
+    networks:
+      - syndar-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  mqtt-broker:
+    image: eclipse-mosquitto:2.0
+    container_name: syndar-mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./configs/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-data:/mosquitto/data
+      - mqtt-logs:/mosquitto/log
+    networks:
+      - syndar-network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: syndar-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - syndar-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: syndar-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./configs/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - syndar-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+networks:
+  syndar-network:
+    driver: bridge
+
+volumes:
+  syndar-data:
+  syndar-logs:
+  mqtt-data:
+  mqtt-logs:
+  prometheus-data:
+  grafana-data:
