@@ -28,6 +28,7 @@ from syndar.command.mission import MissionPlanner
 from syndar.fabric.database import Database, DatabaseConfig
 from syndar.fabric.drift_monitor import DriftMonitor
 from syndar.fabric.mesh import Mesh
+from fastapi.responses import HTMLResponse
 
 logger = structlog.get_logger()
 
@@ -121,6 +122,17 @@ async def health_check():
         "mesh_active": mesh is not None and mesh._running,
         "drift_monitor_active": drift_monitor is not None,
     }
+
+
+@app.get("/")
+async def dashboard():
+    """Serve the web dashboard"""
+    from pathlib import Path
+    
+    dashboard_path = Path(__file__).parent.parent / "web" / "dashboard.html"
+    if dashboard_path.exists():
+        return HTMLResponse(content=dashboard_path.read_text())
+    return HTMLResponse(content="<h1>Syndar Dashboard</h1><p>Dashboard file not found</p>")
 
 
 @app.get("/fop")

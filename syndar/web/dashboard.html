@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syndar Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: #1e293b;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            color: #38bdf8;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 70px);
+        }
+        
+        .sidebar {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid #334155;
+        }
+        
+        .sidebar h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: #94a3b8;
+        }
+        
+        .nav-item {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .nav-item:hover {
+            background: #334155;
+        }
+        
+        .nav-item.active {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
+            overflow-y: auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+        }
+        
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        
+        .content-card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+        }
+        
+        .content-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #e2e8f0;
+        }
+        
+        .entity-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+        
+        .entity-item {
+            background: #334155;
+            padding: 1rem;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .entity-info h4 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .entity-info p {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+        
+        .entity-status {
+            text-align: right;
+        }
+        
+        .battery-bar {
+            width: 100px;
+            height: 8px;
+            background: #475569;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .battery-fill {
+            height: 100%;
+            background: #22c55e;
+            transition: width 0.3s;
+        }
+        
+        .task-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+        
+        .task-item {
+            background: #334155;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+        
+        .task-item h4 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .task-item p {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+        
+        .btn-primary {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+        
+        .btn-primary:hover {
+            background: #0ea5e9;
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Syndar Dashboard</h1>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span id="system-status">Connected</span>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <h2>Navigation</h2>
+            <div class="nav-item active" data-view="overview">Overview</div>
+            <div class="nav-item" data-view="entities">Entities</div>
+            <div class="nav-item" data-view="tasks">Tasks</div>
+            <div class="nav-item" data-view="drift">Drift Monitor</div>
+            <div class="nav-item" data-view="fop">Field Picture</div>
+        </div>
+        
+        <div class="main-content">
+            <!-- Overview View -->
+            <div id="overview-view" class="view">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Active Drones</h3>
+                        <div class="value" id="drone-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Active Tasks</h3>
+                        <div class="value" id="task-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Drift Alerts</h3>
+                        <div class="value" id="drift-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Field Coverage</h3>
+                        <div class="value" id="coverage-pct">0%</div>
+                    </div>
+                </div>
+                
+                <div class="content-card" style="margin-top: 1rem;">
+                    <h2>System Status</h2>
+                    <div id="system-stats">Loading...</div>
+                </div>
+            </div>
+            
+            <!-- Entities View -->
+            <div id="entities-view" class="view hidden">
+                <div class="content-card">
+                    <h2>Active Entities</h2>
+                    <div class="entity-list" id="entity-list">
+                        <p>Loading entities...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tasks View -->
+            <div id="tasks-view" class="view hidden">
+                <div class="content-card">
+                    <h2>Active Tasks</h2>
+                    <button class="btn btn-primary" onclick="showCreateTaskModal()">Create Task</button>
+                    <div class="task-list" id="task-list" style="margin-top: 1rem;">
+                        <p>Loading tasks...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Drift View -->
+            <div id="drift-view" class="view hidden">
+                <div class="content-card">
+                    <h2>Drift Monitor</h2>
+                    <div id="drift-report">
+                        <p>Loading drift data...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FOP View -->
+            <div id="fop-view" class="view hidden">
+                <div class="content-card">
+                    <h2>Fused Field Picture</h2>
+                    <canvas id="fop-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.origin;
+        
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+                document.getElementById(`${item.dataset.view}-view`).classList.remove('hidden');
+                
+                loadView(item.dataset.view);
+            });
+        });
+        
+        async function loadView(view) {
+            switch(view) {
+                case 'overview':
+                    loadOverview();
+                    break;
+                case 'entities':
+                    loadEntities();
+                    break;
+                case 'tasks':
+                    loadTasks();
+                    break;
+                case 'drift':
+                    loadDrift();
+                    break;
+                case 'fop':
+                    loadFOP();
+                    break;
+            }
+        }
+        
+        async function loadOverview() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const stats = await response.json();
+                
+                document.getElementById('system-stats').innerHTML = `
+                    <pre>${JSON.stringify(stats, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+            
+            loadEntityCount();
+            loadTaskCount();
+            loadDriftCount();
+            loadCoverage();
+        }
+        
+        async function loadEntityCount() {
+            try {
+                const response = await fetch(`${API_BASE}/entities`);
+                const data = await response.json();
+                document.getElementById('drone-count').textContent = data.count;
+            } catch (error) {
+                console.error('Failed to load entity count:', error);
+            }
+        }
+        
+        async function loadTaskCount() {
+            try {
+                const response = await fetch(`${API_BASE}/tasks`);
+                const data = await response.json();
+                document.getElementById('task-count').textContent = data.count || 0;
+            } catch (error) {
+                console.error('Failed to load task count:', error);
+            }
+        }
+        
+        async function loadDriftCount() {
+            try {
+                const response = await fetch(`${API_BASE}/drift`);
+                const data = await response.json();
+                document.getElementById('drift-count').textContent = data.alerts_count;
+            } catch (error) {
+                console.error('Failed to load drift count:', error);
+            }
+        }
+        
+        async function loadCoverage() {
+            try {
+                const response = await fetch(`${API_BASE}/fop/state`);
+                const data = await response.json();
+                document.getElementById('coverage-pct').textContent = `${data.coverage_pct.toFixed(1)}%`;
+            } catch (error) {
+                console.error('Failed to load coverage:', error);
+            }
+        }
+        
+        async function loadEntities() {
+            try {
+                const response = await fetch(`${API_BASE}/entities`);
+                const data = await response.json();
+                
+                const entityList = document.getElementById('entity-list');
+                entityList.innerHTML = '';
+                
+                data.entities.forEach(entity => {
+                    const driftStatus = entity.drift_flag ? '⚠️ Drift' : '✓ OK';
+                    const batteryColor = entity.battery_pct > 50 ? '#22c55e' : entity.battery_pct > 20 ? '#eab308' : '#ef4444';
+                    
+                    entityList.innerHTML += `
+                        <div class="entity-item">
+                            <div class="entity-info">
+                                <h4>${entity.entity_id}</h4>
+                                <p>${entity.entity_type} • ${driftStatus}</p>
+                            </div>
+                            <div class="entity-status">
+                                <div class="battery-bar">
+                                    <div class="battery-fill" style="width: ${entity.battery_pct}%; background: ${batteryColor};"></div>
+                                </div>
+                                <p>${entity.battery_pct.toFixed(0)}%</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Failed to load entities:', error);
+            }
+        }
+        
+        async function loadTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/tasks`);
+                const data = await response.json();
+                
+                const taskList = document.getElementById('task-list');
+                taskList.innerHTML = '';
+                
+                data.tasks.forEach(task => {
+                    const statusColor = task.status === 'complete' ? '#22c55e' : task.status === 'assigned' ? '#eab308' : '#64748b';
+                    
+                    taskList.innerHTML += `
+                        <div class="task-item">
+                            <h4>${task.task_id}</h4>
+                            <p>Field: ${task.field_id} • Status: <span style="color: ${statusColor}">${task.status}</span></p>
+                            <p>Priority: ${task.priority.toFixed(1)}</p>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Failed to load tasks:', error);
+            }
+        }
+        
+        async function loadDrift() {
+            try {
+                const response = await fetch(`${API_BASE}/drift`);
+                const data = await response.json();
+                
+                const driftReport = document.getElementById('drift-report');
+                driftReport.innerHTML = `
+                    <p>Alerts: ${data.alerts_count}</p>
+                    <pre>${JSON.stringify(data.alerts, null, 2)}</pre>
+                `;
+            } catch (error) {
+                console.error('Failed to load drift data:', error);
+            }
+        }
+        
+        async function loadFOP() {
+            try {
+                const response = await fetch(`${API_BASE}/fop`);
+                const data = await response.json();
+                
+                // Simple visualization of FOP data
+                const canvas = document.getElementById('fop-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = 800;
+                canvas.height = 600;
+                
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw entities
+                data.features.forEach(feature => {
+                    if (feature.geometry.type === 'Point') {
+                        const [lng, lat, alt] = feature.geometry.coordinates;
+                        const x = (lng + 74) * 10000;
+                        const y = (40 - lat) * 10000;
+                        
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.beginPath();
+                        ctx.arc(x, y, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load FOP:', error);
+            }
+        }
+        
+        function showCreateTaskModal() {
+            alert('Task creation modal - to be implemented');
+        }
+        
+        // Auto-refresh
+        setInterval(() => {
+            const activeView = document.querySelector('.nav-item.active').dataset.view;
+            loadView(activeView);
+        }, 5000);
+        
+        // Initial load
+        loadOverview();
+    </script>
+</body>
+</html>
