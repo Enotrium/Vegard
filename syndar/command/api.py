@@ -118,10 +118,17 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
+@app.get("/health", tags=["System"])
 @limiter.limit("100/minute")
-async def health_check():
-    """Health check endpoint"""
+async def health_check() -> dict:
+    """
+    Health check endpoint
+    
+    Returns the current health status of the Syndar system.
+    
+    Returns:
+        dict: Health status information including mesh and drift monitor status
+    """
     return {
         "status": "healthy",
         "mesh_active": mesh is not None and mesh._running,
@@ -140,14 +147,27 @@ async def dashboard():
     return HTMLResponse(content="<h1>Syndar Dashboard</h1><p>Dashboard file not found</p>")
 
 
-@app.get("/fop")
+@app.get("/fop", tags=["Field Operations"])
 @limiter.limit("60/minute")
 async def get_fused_picture(
-    entity_type: Optional[str] = None,
-    include_tracks: bool = True,
-    include_soil: bool = True,
-):
-    """Get Fused Field Picture as GeoJSON"""
+    entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')"),
+    include_tracks: bool = Query(True, description="Include entity tracks in the response"),
+    include_soil: bool = Query(True, description="Include soil prediction data"),
+) -> dict:
+    """
+    Get Fused Field Picture as GeoJSON
+    
+    Returns a GeoJSON representation of the current operational state including
+    entity positions, tracks, and soil predictions.
+    
+    Args:
+        entity_type: Optional filter for specific entity types
+        include_tracks: Whether to include entity movement tracks
+        include_soil: Whether to include soil prediction data
+    
+    Returns:
+        dict: GeoJSON FeatureCollection with entity and soil data
+    """
     if not fop:
         return JSONResponse(
             status_code=503,
@@ -176,15 +196,29 @@ async def get_fop_state():
     return json.loads(state.model_dump_json())
 
 
-@app.get("/entities")
+@app.get("/entities", tags=["Entities"])
 @limiter.limit("60/minute")
 async def get_entities(
-    entity_type: Optional[str] = None,
-    near_lat: Optional[float] = None,
-    near_lng: Optional[float] = None,
-    radius_m: Optional[float] = None,
-):
-    """Get all active entities"""
+    entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')"),
+    near_lat: Optional[float] = Query(None, description="Latitude for nearby query"),
+    near_lng: Optional[float] = Query(None, description="Longitude for nearby query"),
+    radius_m: Optional[float] = Query(None, description="Radius in meters for nearby query"),
+) -> dict:
+    """
+    Get all active entities
+    
+    Returns a list of all active entities in the mesh, with optional filtering
+    by type or location proximity.
+    
+    Args:
+        entity_type: Optional filter for specific entity types
+        near_lat: Latitude for proximity-based filtering
+        near_lng: Longitude for proximity-based filtering
+        radius_m: Search radius in meters for proximity-based filtering
+    
+    Returns:
+        dict: Dictionary containing entity count and list of entities
+    """
     if not mesh:
         return JSONResponse(
             status_code=503,
@@ -245,10 +279,23 @@ async def get_entity_history(
     }
 
 
-@app.post("/tasks")
+@app.post("/tasks", tags=["Tasks"])
 @limiter.limit("10/minute")
-async def create_task(task_request: dict):
-    """Inject a new scan task"""
+async def create_task(task_request: dict) -> dict:
+    """
+    Create a new scan task
+    
+    Injects a new scan task into the mission planner for allocation to drones.
+    
+    Args:
+        task_request: Dictionary containing task details including field_id, field_boundary, spectral_config, priority, and optional deadline_ms
+    
+    Returns:
+        dict: Created task information with task_id
+    
+    Raises:
+        HTTPException: If mission planner is not initialized
+    """
     if not mission_planner:
         raise HTTPException(status_code=503, detail="Mission planner not initialized")
 
@@ -268,9 +315,22 @@ async def create_task(task_request: dict):
         raise HTTPException(status_code=400, detail=f"Invalid task request: {str(e)}")
 
 
-@app.get("/tasks/{task_id}/status")
-async def get_task_status(task_id: str):
-    """Get task status"""
+@app.get("/tasks/{task_id}", tags=["Tasks"])
+async def get_task_status(task_id: str) -> dict:
+    """
+    Get task status by ID
+    
+    Returns the current status and progress of a specific task.
+    
+    Args:
+        task_id: Unique identifier of the task
+    
+    Returns:
+        dict: Task status information including current status, progress, and assignment
+    
+    Raises:
+        HTTPException: If task is not found
+    """
     if not mission_planner or not mission_planner.task_allocator:
         raise HTTPException(status_code=503, detail="Task allocator not initialized")
 
@@ -287,13 +347,25 @@ async def get_task_status(task_id: str):
     }
 
 
-@app.get("/tasks")
+@app.get("/tasks", tags=["Tasks"])
 async def list_tasks(
-    status: Optional[str] = None,
-    field_id: Optional[str] = None,
+    status: Optional[str] = Query(None, description="Filter by task status (e.g., 'pending', 'assigned', 'complete')"),
+    field_id: Optional[str] = Query(None, description="Filter by field identifier"),
     limit: int = Query(default=100, ge=1, le=1000),
-):
-    """List all tasks with optional filtering"""
+) -> dict:
+    """
+    List all tasks with optional filtering
+    
+    Returns a list of all tasks with optional filtering by status or field.
+    
+    Args:
+        status: Optional filter for task status
+        field_id: Optional filter for field identifier
+        limit: Maximum number of tasks to return
+    
+    Returns:
+        dict: Dictionary containing task count and list of tasks
+    """
     if not mission_planner or not mission_planner.task_allocator:
         raise HTTPException(status_code=503, detail="Task allocator not initialized")
 
@@ -317,12 +389,24 @@ async def cancel_task(task_id: str):
     return {"status": "cancelled", "task_id": task_id}
 
 
-@app.get("/drift")
+@app.get("/drift", tags=["Drift Monitor"])
 async def get_drift_report(
     field_id: Optional[str] = None,
     min_severity: str = "info",
-):
-    """Get cross-node drift report"""
+) -> dict:
+    """
+    Get cross-node drift correlation report
+    
+    Returns a report of drift signals and their spatial/temporal correlations
+    across nodes in the mesh.
+    
+    Args:
+        field_id: Optional filter for specific field identifier
+        min_severity: Minimum severity level for drift alerts (e.g., 'info', 'warning', 'error')
+    
+    Returns:
+        dict: Drift report including alerts count and correlation data
+    """
     if not drift_monitor:
         return JSONResponse(
             status_code=503,
@@ -398,9 +482,16 @@ async def get_coverage_heatmap(region: Optional[str] = None):
     return {"heatmap": heatmap}
 
 
-@app.get("/missions")
-async def get_missions():
-    """Get active missions"""
+@app.get("/missions", tags=["Missions"])
+async def get_missions() -> dict:
+    """
+    Get list of active missions
+    
+    Returns a list of all active missions managed by the mission planner.
+    
+    Returns:
+        dict: Dictionary containing mission count and list of missions
+    """
     if not mission_planner:
         return JSONResponse(
             status_code=503,
@@ -430,9 +521,17 @@ async def get_mission(mission_id: str):
     return status
 
 
-@app.get("/stats")
-async def get_stats():
-    """Get system statistics"""
+@app.get("/stats", tags=["System"])
+async def get_stats() -> dict:
+    """
+    Get system statistics
+    
+    Returns comprehensive statistics about the current system state including
+    mesh, task allocator, and drift monitor metrics.
+    
+    Returns:
+        dict: System statistics including entity counts, task counts, and component status
+    """
     stats = {
         "mesh": mesh.store.get_stats() if mesh else None,
         "fop": fop.get_stats() if fop else None,
