@@ -65,7 +65,7 @@ async def simulate_fleet(
 
     transport = TransportBus(config=TransportConfig(use_mqtt=False))
     allocator = TaskAllocator()
-    drift_monitor = DriftMonitor(thresholds=DriftThresholds(drift_threshold=0.4))
+    drift_monitor = DriftMonitor(thresholds=DriftThresholds(per_node_e_threshold=0.4))
 
     # Start mesh
     await mesh.start()

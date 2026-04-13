@@ -24,12 +24,41 @@ class Position(BaseModel):
     accuracy: float = 1.0
 
 
+class Contaminant(BaseModel):
+    """Contaminant detection result - matches proto definition"""
+    type: str  # "PE", "PP", "PA", "PS", "PET", "PFAS", "glyphosate", "lead", "cadmium", etc.
+    concentration: float = 0.0  # wt% or ppm depending on type
+    confidence: float = 0.0  # 0.0-1.0
+    location: Optional[Position] = None
+
+
 class SoilPrediction(BaseModel):
+    """Soil prediction from Hyperspectral-Restruct - matches proto definition"""
     field_id: str
+    scan_id: str = ""  # Unique identifier for this scan
+
+    # Core soil chemistry
     nutrients: dict[str, float] = Field(default_factory=dict)
-    land_value_score: float = 0.0
+    nutrient_map: dict[str, float] = Field(default_factory=dict)  # Convenience accessor
+
+    # Contamination detection
+    contaminants: list[Contaminant] = Field(default_factory=list)
     contamination_detected: bool = False
-    spectral_hash: str = ""
+
+    # Derived intelligence
+    land_value_score: float = 0.0  # 0.0-1.0 composite score
+    remediation_priority: float = 0.0  # 0.0-1.0 urgency
+    phytoremediation_suitability: float = 0.0  # 0.0-1.0 hemp suitability
+
+    # Provenance and verification
+    spectral_hash: str = ""  # SHA256 of source spectral cube
+    drone_id: str = ""  # Source drone entity_id
+    capture_timestamp_ms: int = 0
+    center_position: Optional[Position] = None  # Center of scan area
+
+    # Model metadata
+    model_version: str = ""  # Hyperspectral-Restruct version
+    model_commit: str = ""  # Git commit hash
 
 
 class EntityState(BaseModel):

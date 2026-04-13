@@ -7,6 +7,7 @@ Supports preemption for priority tasks.
 import asyncio
 import time
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 import structlog
@@ -67,6 +68,31 @@ class TaskResult(BaseModel):
     completed_at_ms: int = Field(default_factory=lambda: int(time.time() * 1000))
     battery_at_completion_pct: float = 0.0
     final_position: Optional[Position] = None
+
+
+class TaskStatus(str, Enum):
+    """Task execution status - matches proto definition"""
+    UNSPECIFIED = "unspecified"
+    PENDING = "pending"
+    ASSIGNED = "assigned"
+    IN_TRANSIT = "in_transit"
+    SCANNING = "scanning"
+    PROCESSING = "processing"
+    COMPLETE = "complete"
+    FAILED = "failed"
+    PREEMPTED = "preempted"
+    CANCELLED = "cancelled"
+
+
+class TaskProgress(BaseModel):
+    """Task progress update - matches proto definition"""
+    task_id: str
+    entity_id: str
+    status: TaskStatus = TaskStatus.PENDING
+    progress_pct: float = Field(ge=0.0, le=100.0, default=0.0)
+    current_position: Optional[Position] = None
+    updated_at_ms: int = Field(default_factory=lambda: int(time.time() * 1000))
+    status_message: str = ""
 
 
 @dataclass

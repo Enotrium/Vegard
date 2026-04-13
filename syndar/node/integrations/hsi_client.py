@@ -19,19 +19,40 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 logger = structlog.get_logger()
 
 
+class Contaminant(BaseModel):
+    """Contaminant detection result"""
+    type: str
+    concentration: float = 0.0
+    confidence: float = 0.0
+
+
 class SoilPrediction(BaseModel):
-    """Soil prediction from HSI model"""
+    """Soil prediction from HSI model - matches mesh.py definition"""
 
     field_id: str
-    scan_id: str
-    nutrients: dict[str, float]
-    land_value_score: float
-    remediation_priority: float
-    contamination_detected: bool
-    contaminants: list[dict] = Field(default_factory=list)
+    scan_id: str = ""
+
+    # Core soil chemistry
+    nutrients: dict[str, float] = Field(default_factory=dict)
+    nutrient_map: dict[str, float] = Field(default_factory=dict)
+
+    # Contamination detection
+    contaminants: list[Contaminant] = Field(default_factory=list)
+    contamination_detected: bool = False
+
+    # Derived intelligence
+    land_value_score: float = 0.0
+    remediation_priority: float = 0.0
+    phytoremediation_suitability: float = 0.0
+
+    # Provenance and verification
     spectral_hash: str = ""
-    model_version: str = ""
+    drone_id: str = ""
     capture_timestamp_ms: int = 0
+
+    # Model metadata
+    model_version: str = ""
+    model_commit: str = ""
 
 
 class HSIModelInfo(BaseModel):

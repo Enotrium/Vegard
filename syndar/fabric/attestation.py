@@ -8,7 +8,7 @@ import hashlib
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import gnupg
 import structlog
@@ -110,7 +110,7 @@ class AttestationService:
                     )
         return None
 
-    def sign(self, entity_id: str, data: bytes | str) -> SignedPayload:
+    def sign(self, entity_id: str, data: Union[bytes, str]) -> SignedPayload:
         """Sign data with node's private key"""
         fingerprint = self._keys.get(entity_id)
         if not fingerprint:
@@ -137,7 +137,7 @@ class AttestationService:
         )
 
     def verify(
-        self, data: bytes | str, signature: str, signer_fingerprint: str
+        self, data: Union[bytes, str], signature: str, signer_fingerprint: str
     ) -> bool:
         """Verify signature against data"""
         if isinstance(data, str):
