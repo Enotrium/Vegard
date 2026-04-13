@@ -43,6 +43,7 @@ dependencies = [
     "watchdog>=3.0.0",
     "pyjwt>=2.8.0",
     "slowapi>=0.1.9",
+    "prometheus-fastapi-instrumentator>=6.0.0",
 ]
 
 [project.optional-dependencies]

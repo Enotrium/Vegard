@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from syndar.auth import AuthManager, AuthConfig, get_auth_manager, set_auth_manager
 from syndar.command.fop import FusedFieldPicture
@@ -102,6 +103,10 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Prometheus metrics instrumentation
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
 # Add CORS middleware
 app.add_middleware(
