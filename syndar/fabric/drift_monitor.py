@@ -92,6 +92,11 @@ class DriftMonitor:
         # Weights for combined E(t)
         self.alpha = 0.3  # e_fast weight
         self.beta = 0.7  # e_slow weight
+        
+        # Historical baselines for adaptive thresholds
+        self._baselines: dict[str, dict[str, float]] = defaultdict(dict)
+        self._trend_history: dict[str, list[float]] = defaultdict(list)
+        self._max_trend_history = 100  # Keep last 100 trend points
 
     async def start(self) -> None:
         """Start periodic analysis"""
@@ -164,6 +169,13 @@ class DriftMonitor:
         if len(recent) < self.thresholds.min_nodes_for_correlation:
             return None
 
+        # Update baselines and compute adaptive threshold
+        self._update_baselines(field_id, recent)
+        adaptive_threshold = self._get_adaptive_threshold(field_id)
+
+        # Trend analysis
+        trend_score = self._analyze_trend(field_id, recent)
+
         # Spatial correlation: are nodes physically clustered?
         positions = np.array([(s.lat, s.lng) for s in recent])
         if len(positions) > 1:
@@ -180,7 +192,7 @@ class DriftMonitor:
         temporal_score = max(0.0, 1.0 - time_spread / 10000)
 
         # Drift magnitude analysis
-        e_values = [s.combined_e for s in recent if s.exceeded]
+        e_values = [s.combined_e for s in recent if s.combined_e > adaptive_threshold]
         if not e_values:
             return None
 
@@ -191,11 +203,17 @@ class DriftMonitor:
         # Determine drift type
         if spatial_score > self.thresholds.spatial_correlation_threshold:
             if temporal_score > self.thresholds.temporal_correlation_threshold:
-                drift_type = "compound"
-                interpretation = (
-                    "Simultaneous drift across field - likely contamination event "
-                    "or rapid soil chemistry change"
-                )
+                if trend_score > 0.7:
+                    drift_type = "escalating"
+                    interpretation = (
+                        "Escalating field-wide drift - urgent intervention required"
+                    )
+                else:
+                    drift_type = "compound"
+                    interpretation = (
+                        "Simultaneous drift across field - likely contamination event "
+                        "or rapid soil chemistry change"
+                    )
             else:
                 drift_type = "spatial"
                 interpretation = (
@@ -210,7 +228,7 @@ class DriftMonitor:
                 interpretation = "Random per-node noise - no action needed"
 
         # Confidence based on number of nodes and correlation scores
-        confidence = min(1.0, len(recent) / 10) * (spatial_score + temporal_score) / 2
+        confidence = min(1.0, len(recent) / 10) * (spatial_score + temporal_score + trend_score) / 3
 
         return DriftCorrelation(
             field_id=field_id,
@@ -339,4 +357,64 @@ class DriftMonitor:
                 "total_alerts": len(self._alerts),
                 "critical_alerts": len([a for a in self._alerts if a.severity == "critical"]),
                 "emergency_alerts": len([a for a in self._alerts if a.severity == "emergency"]),
+                "fields_with_baselines": len(self._baselines),
             }
+
+    def _update_baselines(self, field_id: str, signals: list[NodeDriftSignal]) -> None:
+        """Update historical baselines for adaptive thresholds"""
+        if not signals:
+            return
+
+        e_values = [s.combined_e for s in signals]
+        baseline = self._baselines[field_id]
+        
+        # Exponential moving average for baseline
+        alpha = 0.1  # Learning rate
+        if "mean_e" not in baseline:
+            baseline["mean_e"] = np.mean(e_values)
+            baseline["std_e"] = np.std(e_values)
+        else:
+            baseline["mean_e"] = alpha * np.mean(e_values) + (1 - alpha) * baseline["mean_e"]
+            baseline["std_e"] = alpha * np.std(e_values) + (1 - alpha) * baseline["std_e"]
+        
+        baseline["count"] = baseline.get("count", 0) + len(signals)
+
+    def _get_adaptive_threshold(self, field_id: str) -> float:
+        """Get adaptive threshold based on historical baseline"""
+        baseline = self._baselines.get(field_id, {})
+        if "mean_e" in baseline and "std_e" in baseline:
+            # Adaptive threshold: baseline mean + 2 * baseline std
+            return baseline["mean_e"] + 2 * baseline["std_e"]
+        return self.thresholds.per_node_e_threshold
+
+    def _analyze_trend(self, field_id: str, signals: list[NodeDriftSignal]) -> float:
+        """Analyze drift trend over time (0-1 score, higher = increasing trend)"""
+        if len(signals) < 2:
+            return 0.0
+
+        # Sort by timestamp
+        sorted_signals = sorted(signals, key=lambda s: s.timestamp_ms)
+        e_values = [s.combined_e for s in sorted_signals]
+        
+        # Calculate trend using linear regression
+        x = np.arange(len(e_values))
+        y = np.array(e_values)
+        
+        # Simple linear regression
+        if len(x) > 1:
+            slope = np.polyfit(x, y, 1)[0]
+            # Normalize slope to 0-1 range
+            # Positive slope indicates increasing trend
+            trend_score = min(1.0, max(0.0, slope * 10))
+        else:
+            trend_score = 0.0
+
+        # Update trend history
+        self._trend_history[field_id].append(trend_score)
+        if len(self._trend_history[field_id]) > self._max_trend_history:
+            self._trend_history[field_id].pop(0)
+
+        # Return smoothed trend score
+        if len(self._trend_history[field_id]) > 5:
+            return np.mean(self._trend_history[field_id][-5:])
+        return trend_score
