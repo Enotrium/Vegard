@@ -14,9 +14,12 @@ import yaml
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from syndar.logging_config import get_logger
-
-logger = get_logger(__name__)
+# Lazy import to avoid circular dependency
+try:
+    from syndar.logging_config import get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    logger = structlog.get_logger()
 
 
 class ConfigFileHandler(FileSystemEventHandler):

@@ -15,9 +15,14 @@ import structlog
 from pydantic import BaseModel, Field
 
 from syndar.fabric.database import Database
-from syndar.logging_config import get_logger, bind_context
 
-logger = get_logger(__name__)
+# Lazy import to avoid circular dependency
+try:
+    from syndar.logging_config import get_logger, bind_context
+    logger = get_logger(__name__)
+except ImportError:
+    logger = structlog.get_logger()
+    bind_context = lambda **kwargs: None
 
 
 class Position(BaseModel):

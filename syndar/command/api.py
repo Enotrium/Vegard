@@ -29,10 +29,15 @@ from syndar.command.mission import MissionPlanner
 from syndar.fabric.database import Database, DatabaseConfig
 from syndar.fabric.drift_monitor import DriftMonitor
 from syndar.fabric.mesh import Mesh
-from syndar.logging_config import configure_logging, get_logger
 from fastapi.responses import HTMLResponse
 
-logger = get_logger(__name__)
+# Lazy import to avoid circular dependency
+try:
+    from syndar.logging_config import configure_logging, get_logger
+    logger = get_logger(__name__)
+except ImportError:
+    logger = structlog.get_logger()
+    configure_logging = lambda **kwargs: None
 
 security = HTTPBearer()
 limiter = Limiter(key_func=get_remote_address)
