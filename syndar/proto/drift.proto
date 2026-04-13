@@ -2,10 +2,9 @@ syntax = "proto3";
 
 package syndar.api.v1;
 
-import "syndar/proto/entity.proto";
+import "syndar/proto/common.proto";
 
 option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
-option python_package = "syndar.proto";
 
 // Per-node drift signal from Arthedain SNN
 message NodeDriftSignal {

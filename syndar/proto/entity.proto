@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package syndar.api.v1;
 
-import "syndar/proto/soil.proto";
-import "syndar/proto/drift.proto";
+import "syndar/proto/common.proto";
 
 option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
-option python_package = "syndar.proto";
 
 // EntityType defines the kind of autonomous asset
 enum EntityType {
@@ -17,15 +15,6 @@ enum EntityType {
   ENTITY_TYPE_RELAY = 4;
 }
 
-// Geographic position with altitude
-message Position {
-  double latitude = 1;
-  double longitude = 2;
-  double altitude_m = 3;
-  float accuracy_m = 4;
-  int64 timestamp_ms = 5;
-}
-
 // EntityState is the core mesh entity - extends Anduril Lattice Entity
 // with agricultural-specific fields
 message EntityState {
@@ -33,8 +22,8 @@ message EntityState {
   EntityType type = 2;
   Position position = 3;
 
-  // Agricultural intelligence payload
-  SoilPrediction soil = 4;
+  // Agricultural intelligence payload (serialized separately)
+  bytes soil_data = 4;           // Serialized SoilPrediction
 
   // Arthedain drift signal
   float drift_score = 5;          // E(t) deviation magnitude

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package syndar.api.v1;
+
+option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
+
+// Geographic position with altitude
+message Position {
+  double latitude = 1;
+  double longitude = 2;
+  double altitude_m = 3;
+  float accuracy_m = 4;
+  int64 timestamp_ms = 5;
+}
+
+// GeoJSON-compatible polygon for field boundaries
+message GeoPolygon {
+  string type = 1;  // "Polygon"
+  repeated LinearRing coordinates = 2;
+}
+
+message LinearRing {
+  repeated Position points = 1;
+}

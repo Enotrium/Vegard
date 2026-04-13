@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package syndar.api.v1;
 
-import "syndar/proto/entity.proto";
-import "syndar/proto/soil.proto";
+import "syndar/proto/common.proto";
 
 option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
-option python_package = "syndar.proto";
 
 // Spectral configuration for scan task
 message SpectralConfig {
@@ -94,7 +92,7 @@ message TaskResult {
   string entity_id = 2;
   bool success = 3;
   string failure_reason = 4;
-  SoilPrediction soil_data = 5;
+  bytes soil_data = 5;  // Serialized SoilPrediction
   bytes raw_spectral_cube_ref = 6;  // Reference to stored cube
   int64 completed_at_ms = 7;
   float battery_at_completion_pct = 8;

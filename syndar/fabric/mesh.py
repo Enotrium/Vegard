@@ -14,6 +14,8 @@ from collections.abc import AsyncIterator
 import structlog
 from pydantic import BaseModel, Field
 
+from syndar.config import get_config
+
 logger = structlog.get_logger()
 
 
@@ -240,9 +242,54 @@ class Mesh:
 
     async def _gossip_entity(self, entity: EntityState) -> None:
         """Gossip entity to N random peers (fanout)"""
-        # TODO: Implement actual peer gossip via gRPC
-        # For now, just local storage
-        pass
+        if not self._transport:
+            return
+
+        try:
+            # Serialize entity for transport
+            payload = {
+                "entity_id": entity.entity_id,
+                "entity_type": entity.entity_type,
+                "position": {
+                    "lat": entity.position.lat,
+                    "lng": entity.position.lng,
+                    "alt": entity.position.alt,
+                },
+                "timestamp_ms": entity.timestamp_ms,
+                "drift_score": entity.drift_score,
+                "drift_flag": entity.drift_flag,
+                "battery_pct": entity.battery_pct,
+                "task_id": entity.task_id,
+            }
+
+            # Include soil data if present
+            if entity.soil:
+                payload["soil"] = {
+                    "field_id": entity.soil.field_id,
+                    "scan_id": entity.soil.scan_id,
+                    "land_value_score": entity.soil.land_value_score,
+                    "contamination_detected": entity.soil.contamination_detected,
+                    "nutrient_map": entity.soil.nutrient_map,
+                }
+
+            # Publish to mesh topic
+            await self._transport.publish(
+                f"mesh/entities/{entity.entity_id}",
+                payload,
+                protocol="grpc",
+            )
+
+            logger.debug(
+                "Gossiped entity",
+                entity_id=entity.entity_id,
+                fanout=self.config.fanout,
+            )
+        except Exception as e:
+            logger.error(
+                "Gossip failed",
+                entity_id=entity.entity_id,
+                error=str(e),
+            )
 
     def stream_entities(
         self, entity_type: Optional[str] = None

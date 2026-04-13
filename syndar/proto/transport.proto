@@ -2,28 +2,31 @@ syntax = "proto3";
 
 package syndar.api.v1;
 
+import "syndar/proto/common.proto";
 import "syndar/proto/entity.proto";
-import "syndar/proto/task.proto";
-import "syndar/proto/drift.proto";
-import "syndar/proto/soil.proto";
 
 option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
-option python_package = "syndar.proto";
+
+// Wrapper messages for serialized data
+message BytesMessage {
+  bytes data = 1;
+  string content_type = 2;
+}
 
 // MeshService - gRPC for drone↔node communication
 // Compatible with Anduril Lattice mesh patterns
 service MeshService {
   // Bidirectional streaming for real-time entity state
-  rpc StreamEntities(stream EntityState) returns (stream EntityState);
+  rpc StreamEntities(stream BytesMessage) returns (stream BytesMessage);
 
   // Unary updates for low-bandwidth scenarios
-  rpc PublishEntity(EntityState) returns (PublishAck);
+  rpc PublishEntity(BytesMessage) returns (PublishAck);
 
   // Batch entity sync
-  rpc SyncEntities(EntityBatch) returns (SyncAck);
+  rpc SyncEntities(BytesMessage) returns (SyncAck);
 
   // Entity query
-  rpc QueryEntities(EntityQuery) returns (EntityHistory);
+  rpc QueryEntities(BytesMessage) returns (EntityHistory);
 
   // Heartbeat for liveness
   rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
@@ -63,19 +66,19 @@ enum MeshStatus {
 // TaskService - Auction and task management
 service TaskService {
   // Publish a new task for bidding
-  rpc PublishTask(TaskRequest) returns (TaskPublished);
+  rpc PublishTask(BytesMessage) returns (TaskPublished);
 
   // Submit a bid
-  rpc Bid(TaskBid) returns (BidAck);
+  rpc Bid(BytesMessage) returns (BidAck);
 
   // Accept/assign a task
-  rpc AcceptTask(TaskAck) returns (TaskAssigned);
+  rpc AcceptTask(BytesMessage) returns (TaskAssigned);
 
   // Stream progress updates
-  rpc StreamProgress(stream TaskProgress) returns (stream TaskStatus);
+  rpc StreamProgress(stream BytesMessage) returns (stream BytesMessage);
 
   // Report task completion
-  rpc CompleteTask(TaskResult) returns (CompletionAck);
+  rpc CompleteTask(BytesMessage) returns (CompletionAck);
 
   // Cancel a task
   rpc CancelTask(CancelRequest) returns (CancelResponse);
@@ -123,16 +126,16 @@ message CancelResponse {
 // DriftService - Cross-node drift monitoring
 service DriftService {
   // Stream drift signals from nodes
-  rpc StreamDrift(stream NodeDriftSignal) returns (stream DriftAlert);
+  rpc StreamDrift(stream BytesMessage) returns (stream BytesMessage);
 
   // Query drift correlations
-  rpc QueryDrift(DriftQuery) returns (DriftReport);
+  rpc QueryDrift(BytesMessage) returns (BytesMessage);
 
   // Subscribe to drift alerts
-  rpc SubscribeAlerts(AlertSubscription) returns (stream DriftAlert);
+  rpc SubscribeAlerts(AlertSubscription) returns (stream BytesMessage);
 
   // Request model recalibration
-  rpc RequestRecalibration(RecalibrationRequest) returns (RecalibrationResponse);
+  rpc RequestRecalibration(BytesMessage) returns (BytesMessage);
 }
 
 message AlertSubscription {
@@ -145,10 +148,10 @@ message AlertSubscription {
 // These messages map to REST API at /api/syndar/ingest
 service AIPBridgeService {
   // Ingest soil predictions
-  rpc IngestSoil(SoilPrediction) returns (IngestAck);
+  rpc IngestSoil(BytesMessage) returns (IngestAck);
 
   // Batch ingest
-  rpc IngestBatch(FieldSoilMap) returns (BatchIngestAck);
+  rpc IngestBatch(BytesMessage) returns (BatchIngestAck);
 
   // Query field status from AIP perspective
   rpc QueryFieldStatus(FieldStatusRequest) returns (FieldStatusResponse);
@@ -189,7 +192,7 @@ message GossipMessage {
   string sender_id = 1;
   int64 timestamp_ms = 2;
   repeated string known_peers = 3;
-  repeated EntityState entity_deltas = 4;
+  repeated bytes entity_deltas = 4;
   int32 ttl = 5;
 }
 
