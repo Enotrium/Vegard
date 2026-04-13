@@ -5,6 +5,7 @@ Supports preemption for priority tasks.
 """
 
 import asyncio
+import json
 import time
 from dataclasses import dataclass
 from enum import Enum
@@ -107,22 +108,38 @@ class AuctionState:
             self.bids = []
 
 
+class TaskAllocatorConfig(BaseModel):
+    auction_duration_ms: int = 5000
+
+
 class TaskAllocator:
     """Auction-based distributed task allocation"""
 
-    def __init__(self):
+    def __init__(self, config: Optional[TaskAllocatorConfig] = None, database=None):
+        self.config = config or TaskAllocatorConfig()
+        self._tasks: dict[str, TaskRequest] = {}
         self._auctions: dict[str, AuctionState] = {}
+        self._bids: dict[str, list[TaskBid]] = {}
         self._assignments: dict[str, TaskAssignment] = {}
-        self._active_tasks: dict[str, str] = {}  # entity_id -> task_id
         self._completed: list[TaskResult] = []
+        self._subscribers: list[Callable] = []
         self._lock = asyncio.Lock()
-        self._auction_duration_ms = 5000
+        self._database = database
+        self._auction_duration_ms = self.config.auction_duration_ms
+
+    async def start(self) -> None:
+        """Start task allocator and load from database"""
+        await self.load_from_database()
 
     async def publish_task(self, request: TaskRequest) -> None:
         """Publish new task for bidding"""
         async with self._lock:
             self._auctions[request.task_id] = AuctionState(request=request)
         logger.info("Task published", task_id=request.task_id, priority=request.priority)
+
+        # Persist to database
+        if self._database:
+            await self._database.upsert_task(request)
 
         # Start auction timer
         asyncio.create_task(self._close_auction(request.task_id))
@@ -134,6 +151,10 @@ class TaskAllocator:
             if not auction:
                 logger.warning("Bid for unknown task", task_id=bid.task_id)
                 return False
+
+        # Persist bid to database
+        if self._database:
+            await self._database.record_bid(bid)
             if auction.winner:
                 logger.warning("Auction already closed", task_id=bid.task_id)
                 return False
@@ -213,6 +234,10 @@ class TaskAllocator:
             if result.entity_id in self._active_tasks:
                 del self._active_tasks[result.entity_id]
             self._completed.append(result)
+
+        # Persist task completion to database
+        if self._database:
+            await self._database.upsert_task(result)
 
         logger.info(
             "Task completed",
@@ -303,6 +328,49 @@ class TaskAllocator:
     def get_task(self, task_id: str) -> Optional[TaskAssignment]:
         """Get task by ID"""
         return self._assignments.get(task_id)
+
+    async def load_from_database(self) -> None:
+        """Load tasks from database on startup"""
+        if not self._database:
+            return
+
+        try:
+            # Load active tasks
+            tasks_data = await self._database.list_tasks(status="pending")
+            tasks_data.extend(await self._database.list_tasks(status="assigned"))
+            
+            for task_data in tasks_data:
+                task = TaskRequest(
+                    task_id=task_data["task_id"],
+                    field_id=task_data["field_id"],
+                    target_polygon=json.loads(task_data["target_polygon"]),
+                    priority=task_data["priority"],
+                    deadline_ms=task_data["deadline_ms"],
+                    estimated_duration_s=task_data["estimated_duration_s"],
+                    spectral=SpectralConfig(),
+                    mission_id=task_data.get("mission_id"),
+                    requested_by=task_data.get("requested_by"),
+                    preemptible=True,
+                )
+                
+                # Create assignment if entity_id is set
+                if task_data.get("entity_id"):
+                    assignment = TaskAssignment(
+                        task_id=task.task_id,
+                        entity_id=task_data["entity_id"],
+                        assigned_at_ms=task_data.get("assigned_at_ms", 0),
+                        deadline_ms=task_data["deadline_ms"],
+                        status=task_data["status"],
+                    )
+                    self._assignments[task.task_id] = assignment
+                    self._active_tasks[task_data["entity_id"]] = task.task_id
+
+                # Create auction state
+                self._auctions[task.task_id] = AuctionState(request=task)
+
+            logger.info("Loaded tasks from database", count=len(self._auctions))
+        except Exception as e:
+            logger.error("Failed to load tasks from database", error=str(e))
 
     def list_tasks(
         self, status: Optional[str] = None, field_id: Optional[str] = None, limit: int = 100

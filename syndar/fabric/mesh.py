@@ -15,6 +15,7 @@ import structlog
 from pydantic import BaseModel, Field
 
 from syndar.config import get_config
+from syndar.fabric.database import Database
 
 logger = structlog.get_logger()
 
@@ -88,14 +89,48 @@ class MeshConfig:
 
 
 class EntityStore:
-    """Time-series store of entity states with geo-indexing"""
+    """Thread-safe entity store with subscription support and database persistence"""
 
-    def __init__(self, config: MeshConfig = None):
-        self.config = config or MeshConfig()
+    def __init__(
+        self, config: Optional[EntityStoreConfig] = None, database: Optional[Database] = None
+    ):
+        self.config = config or EntityStoreConfig()
         self._entities: dict[str, EntityState] = {}
         self._history: dict[str, list[EntityState]] = defaultdict(list)
         self._subscribers: list[Callable[[EntityState], None]] = []
         self._lock = asyncio.Lock()
+        self._database = database
+
+    async def load_from_database(self) -> None:
+        """Load entities from database on startup"""
+        if not self._database:
+            return
+
+        try:
+            entities_data = await self._database.list_entities()
+            async with self._lock:
+                for entity_data in entities_data:
+                    # Reconstruct EntityState from database row
+                    entity = EntityState(
+                        entity_id=entity_data["entity_id"],
+                        entity_type=entity_data["entity_type"],
+                        position=Position(
+                            lat=entity_data["lat"],
+                            lng=entity_data["lng"],
+                            alt=entity_data["alt"],
+                            accuracy=entity_data.get("accuracy", 1.0),
+                        ),
+                        timestamp_ms=entity_data["timestamp_ms"],
+                        drift_score=entity_data.get("drift_score", 0.0),
+                        drift_flag=entity_data.get("drift_flag", False),
+                        battery_pct=entity_data.get("battery_pct", 100.0),
+                        task_id=entity_data.get("task_id"),
+                    )
+                    self._entities[entity.entity_id] = entity
+
+            logger.info("Loaded entities from database", count=len(self._entities))
+        except Exception as e:
+            logger.error("Failed to load entities from database", error=str(e))
 
     async def update(self, entity: EntityState) -> None:
         """Update entity state and notify subscribers"""
@@ -109,6 +144,11 @@ class EntityStore:
             self._history[entity.entity_id] = [
                 e for e in self._history[entity.entity_id] if e.timestamp_ms > cutoff
             ]
+
+        # Persist to database
+        if self._database:
+            await self._database.upsert_entity(entity)
+            await self._database.record_entity_history(entity)
 
         if old is None or old.timestamp_ms < entity.timestamp_ms:
             await self._notify(entity)
@@ -176,17 +216,22 @@ class EntityStore:
 class Mesh:
     """Gossip protocol mesh - core coordination fabric"""
 
-    def __init__(self, config: MeshConfig = None):
+    def __init__(self, config: MeshConfig = None, database: Optional[Database] = None):
         self.config = config or MeshConfig()
-        self.store = EntityStore(config)
+        self.store = EntityStore(config, database)
         self._peers: set[str] = set()
         self._gossip_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
         self._running = False
+        self._database = database
 
     async def start(self) -> None:
         """Start mesh gossip and maintenance tasks"""
         self._running = True
+        
+        # Load entities from database
+        await self.store.load_from_database()
+        
         self._gossip_task = asyncio.create_task(self._gossip_loop())
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
         logger.info("Mesh started", fanout=self.config.fanout)

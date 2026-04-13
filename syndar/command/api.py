@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from syndar.command.fop import FusedFieldPicture
 from syndar.command.mission import MissionPlanner
+from syndar.fabric.database import Database, DatabaseConfig
 from syndar.fabric.drift_monitor import DriftMonitor
 from syndar.fabric.mesh import Mesh
 
@@ -50,6 +51,7 @@ mesh: Optional[Mesh] = None
 fop: Optional[FusedFieldPicture] = None
 mission_planner: Optional[MissionPlanner] = None
 drift_monitor: Optional[DriftMonitor] = None
+database: Optional[Database] = None
 
 
 @asynccontextmanager
@@ -57,17 +59,29 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     logger.info("Syndar API starting")
+    
+    # Initialize database
+    if database:
+        await database.initialize()
+    
+    # Start components
     if mesh:
         await mesh.start()
+    if mission_planner and mission_planner.task_allocator:
+        await mission_planner.task_allocator.start()
     if drift_monitor:
         await drift_monitor.start()
+    
     yield
+    
     # Shutdown
     logger.info("Syndar API shutting down")
     if mesh:
         await mesh.stop()
     if drift_monitor:
         await drift_monitor.stop()
+    if database:
+        await database.close()
 
 
 app = FastAPI(
@@ -431,10 +445,12 @@ def setup_api(
     fop_instance: FusedFieldPicture,
     mission_planner_instance: MissionPlanner,
     drift_monitor_instance: Optional[DriftMonitor] = None,
+    database_instance: Optional[Database] = None,
 ):
     """Setup API with injected dependencies"""
-    global mesh, fop, mission_planner, drift_monitor
+    global mesh, fop, mission_planner, drift_monitor, database
     mesh = mesh_instance
     fop = fop_instance
     mission_planner = mission_planner_instance
     drift_monitor = drift_monitor_instance
+    database = database_instance
