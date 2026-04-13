@@ -40,11 +40,11 @@ limiter = Limiter(key_func=get_remote_address)
 # Request/Response Models
 class TaskRequest(BaseModel):
     """Task creation request"""
-    field_id: str
-    field_boundary: list[tuple[float, float]]
-    spectral_config: dict
-    priority: int = Field(default=5, ge=1, le=10)
-    deadline_ms: Optional[int] = None
+    field_id: str = Field(..., min_length=1, max_length=100, description="Field identifier")
+    field_boundary: list[tuple[float, float]] = Field(..., min_items=3, description="Polygon boundary coordinates")
+    spectral_config: dict = Field(default_factory=dict, description="Spectral configuration")
+    priority: int = Field(default=5, ge=1, le=10, description="Task priority (1-10)")
+    deadline_ms: Optional[int] = Field(None, gt=0, description="Deadline in milliseconds since epoch")
 
 
 class TaskStatusResponse(BaseModel):
@@ -52,8 +52,29 @@ class TaskStatusResponse(BaseModel):
     task_id: str
     status: str
     entity_id: Optional[str]
-    progress_pct: float
+    progress_pct: float = Field(..., ge=0, le=100)
     updated_at_ms: int
+
+
+# Input sanitization utilities
+def sanitize_string(input_str: str, max_length: int = 1000) -> str:
+    """Sanitize string input to prevent injection attacks"""
+    if not isinstance(input_str, str):
+        return ""
+    
+    # Remove potentially dangerous characters
+    sanitized = input_str.strip()
+    
+    # Limit length
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length]
+    
+    return sanitized
+
+
+def validate_lat_lng(lat: float, lng: float) -> bool:
+    """Validate latitude and longitude values"""
+    return -90 <= lat <= 90 and -180 <= lng <= 180
 
 
 # Global state (injected on startup)
@@ -199,10 +220,10 @@ async def get_fop_state():
 @app.get("/entities", tags=["Entities"])
 @limiter.limit("60/minute")
 async def get_entities(
-    entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')"),
-    near_lat: Optional[float] = Query(None, description="Latitude for nearby query"),
-    near_lng: Optional[float] = Query(None, description="Longitude for nearby query"),
-    radius_m: Optional[float] = Query(None, description="Radius in meters for nearby query"),
+    entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')", min_length=1, max_length=50),
+    near_lat: Optional[float] = Query(None, description="Latitude for nearby query", ge=-90, le=90),
+    near_lng: Optional[float] = Query(None, description="Longitude for nearby query", ge=-180, le=180),
+    radius_m: Optional[float] = Query(None, description="Radius in meters for nearby query", gt=0, le=100000),
 ) -> dict:
     """
     Get all active entities
@@ -225,7 +246,15 @@ async def get_entities(
             content={"error": "Mesh not initialized"},
         )
 
+    # Sanitize entity_type if provided
+    if entity_type:
+        entity_type = sanitize_string(entity_type, max_length=50)
+
+    # Validate coordinates if provided
     if near_lat is not None and near_lng is not None and radius_m is not None:
+        if not validate_lat_lng(near_lat, near_lng):
+            raise HTTPException(status_code=400, detail="Invalid latitude or longitude values")
+        
         results = await mesh.store.query_nearby(
             near_lat, near_lng, radius_m, entity_type
         )
@@ -349,8 +378,8 @@ async def get_task_status(task_id: str) -> dict:
 
 @app.get("/tasks", tags=["Tasks"])
 async def list_tasks(
-    status: Optional[str] = Query(None, description="Filter by task status (e.g., 'pending', 'assigned', 'complete')"),
-    field_id: Optional[str] = Query(None, description="Filter by field identifier"),
+    status: Optional[str] = Query(None, description="Filter by task status (e.g., 'pending', 'assigned', 'complete')", min_length=1, max_length=50),
+    field_id: Optional[str] = Query(None, description="Filter by field identifier", min_length=1, max_length=100),
     limit: int = Query(default=100, ge=1, le=1000),
 ) -> dict:
     """
@@ -368,6 +397,12 @@ async def list_tasks(
     """
     if not mission_planner or not mission_planner.task_allocator:
         raise HTTPException(status_code=503, detail="Task allocator not initialized")
+
+    # Sanitize string inputs
+    if status:
+        status = sanitize_string(status, max_length=50)
+    if field_id:
+        field_id = sanitize_string(field_id, max_length=100)
 
     tasks = mission_planner.task_allocator.list_tasks(status=status, field_id=field_id, limit=limit)
     return {
@@ -502,9 +537,24 @@ async def get_missions() -> dict:
     return {"missions": missions, "count": len(missions)}
 
 
-@app.get("/missions/{mission_id}")
-async def get_mission(mission_id: str):
-    """Get mission status"""
+@app.get("/missions/{mission_id}", tags=["Missions"])
+async def get_mission_status(mission_id: str) -> dict:
+    """
+    Get mission status by ID
+    
+    Returns the current status and progress of a specific mission.
+    
+    Args:
+        mission_id: Unique identifier of the mission
+    
+    Returns:
+        dict: Mission status information
+    
+    Raises:
+        HTTPException: If mission is not found
+    """
+    # Sanitize mission_id
+    mission_id = sanitize_string(mission_id, max_length=100)
     if not mission_planner:
         return JSONResponse(
             status_code=503,
