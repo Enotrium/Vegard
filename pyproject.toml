@@ -41,6 +41,7 @@ dependencies = [
     "tenacity>=8.2.3",
     "structlog>=23.2.0",
     "watchdog>=3.0.0",
+    "pyjwt>=2.8.0",
 ]
 
 [project.optional-dependencies]

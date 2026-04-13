@@ -13,11 +13,13 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 import structlog
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Query, Security, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
+from syndar.auth import AuthManager, AuthConfig, get_auth_manager, set_auth_manager
 from syndar.command.fop import FusedFieldPicture
 from syndar.command.mission import MissionPlanner
 from syndar.fabric.database import Database, DatabaseConfig
@@ -25,6 +27,8 @@ from syndar.fabric.drift_monitor import DriftMonitor
 from syndar.fabric.mesh import Mesh
 
 logger = structlog.get_logger()
+
+security = HTTPBearer()
 
 
 # Request/Response Models
@@ -52,6 +56,7 @@ fop: Optional[FusedFieldPicture] = None
 mission_planner: Optional[MissionPlanner] = None
 drift_monitor: Optional[DriftMonitor] = None
 database: Optional[Database] = None
+auth_manager: Optional[AuthManager] = None
 
 
 @asynccontextmanager
@@ -440,17 +445,57 @@ async def websocket_stream(websocket: WebSocket):
         mesh.store.unsubscribe(on_entity_update)
 
 
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Security(security),
+) -> Optional[dict]:
+    """Get current user from JWT token"""
+    if not auth_manager or not auth_manager.config.enable_auth:
+        return {"username": "anonymous", "role": "anonymous", "permissions": ["*"]}
+    
+    token = credentials.credentials
+    user = auth_manager.verify_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    
+    return {
+        "username": user.username,
+        "role": user.role,
+        "permissions": user.permissions,
+    }
+
+
+def require_permission(permission: str):
+    """Dependency factory for requiring specific permission"""
+    def check_permission(current_user: dict = Depends(get_current_user)) -> dict:
+        if not auth_manager or not auth_manager.config.enable_auth:
+            return current_user
+        
+        if not auth_manager.check_permission(
+            type('User', (), current_user)(), permission
+        ):
+            raise HTTPException(status_code=403, detail=f"Permission required: {permission}")
+        
+        return current_user
+    
+    return check_permission
+
+
 def setup_api(
     mesh_instance: Mesh,
     fop_instance: FusedFieldPicture,
     mission_planner_instance: MissionPlanner,
     drift_monitor_instance: Optional[DriftMonitor] = None,
     database_instance: Optional[Database] = None,
+    auth_manager_instance: Optional[AuthManager] = None,
 ):
     """Setup API with injected dependencies"""
-    global mesh, fop, mission_planner, drift_monitor, database
+    global mesh, fop, mission_planner, drift_monitor, database, auth_manager
     mesh = mesh_instance
     fop = fop_instance
     mission_planner = mission_planner_instance
     drift_monitor = drift_monitor_instance
     database = database_instance
+    auth_manager = auth_manager_instance
+    
+    if auth_manager:
+        set_auth_manager(auth_manager)
