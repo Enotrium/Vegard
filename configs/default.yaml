@@ -1,0 +1,229 @@
+# Syndar Default Configuration
+# Autonomous Agricultural Intelligence Platform - Drone Fleet Coordination
+
+# Transport Configuration
+transport:
+  # gRPC settings for drone↔node communication
+  grpc:
+    enabled: true
+    port: 50051
+    max_workers: 10
+    max_message_size_mb: 10
+
+  # MQTT settings for cloud↔AIP bridge
+  mqtt:
+    enabled: true
+    broker: "localhost"
+    port: 1883
+    username: null
+    password: null
+    client_id: "syndar-node"
+    qos: 1
+    keepalive: 60
+
+# Mesh Configuration
+mesh:
+  fanout: 3                    # Gossip fanout N (each node relays to N peers)
+  gossip_interval_ms: 1000     # How often to gossip state
+  max_entity_age_ms: 30000     # Max age before entity considered stale
+  heartbeat_timeout_ms: 10000  # Timeout for heartbeat/keepalive
+  topic_filters:               # Topic subscriptions for selective pub/sub
+    - "soil_predictions"
+    - "drift_alerts"
+    - "task_assignments"
+
+# Task Allocator Configuration
+task_allocator:
+  auction_duration_ms: 5000    # How long to collect bids before assignment
+  enable_preemption: true      # Allow high-priority tasks to preempt
+  min_priority_to_preempt: 0.7 # Priority threshold for preemption
+  max_concurrent_tasks: 20     # Maximum tasks per drone
+  default_scan_duration_s: 600 # Default estimated scan time
+
+  # Bid calculation weights
+  bid_weights:
+    distance: 1.0
+    battery: 2.0
+    load: 1.5
+    priority: -20.0            # Negative = bonus
+
+# Drift Monitor Configuration
+drift_monitor:
+  enabled: true
+
+  # Thresholds
+  per_node_e_threshold: 0.5
+  spatial_correlation_threshold: 0.7
+  temporal_correlation_threshold: 0.8
+  min_nodes_for_correlation: 3
+  max_signal_age_ms: 60000
+
+  # Eligibility trace weights
+  alpha: 0.3                   # e_fast weight (~100ms)
+  beta: 0.7                    # e_slow weight (~700ms)
+
+  # Analysis intervals
+  analysis_interval_s: 5.0
+  correlation_window_s: 30.0
+
+  # Alert thresholds
+  alert_severity_thresholds:
+    info: 0.3
+    warning: 0.5
+    critical: 0.7
+    emergency: 0.9
+
+# Attestation Configuration
+attestation:
+  enabled: true
+  gpg_home: "~/.syndar/gnupg"
+  key_type: "RSA"
+  key_length: 4096
+  require_signatures: true     # Require signed payloads from drones
+
+# AIP Bridge Configuration
+aip_bridge:
+  enabled: true
+  base_url: "http://localhost:3000"
+  ingest_endpoint: "/api/syndar/ingest"
+  api_key: null                # Set via SYNDAR_AIP_API_KEY env var
+  timeout_s: 30.0
+  max_retries: 3
+
+  # Batching
+  batch_size: 10
+  batch_interval_s: 5.0
+  enable_batching: true
+
+# Spectral Bridge Configuration
+spectral_bridge:
+  # Spectral cube dimensions
+  cube_width: 128
+  cube_height: 128
+  band_start_nm: 400
+  band_end_nm: 2500
+  band_count: 200
+
+  # Preprocessing pipeline
+  preprocessing:
+    smoothing:
+      enabled: true
+      window_size: 5
+      method: "savgol"           # savgol, moving_average
+
+    continuum_removal:
+      enabled: true
+      method: "convex_hull"
+
+    normalization:
+      enabled: true
+      method: "snv"              # Standard Normal Variate
+
+  # Frame buffering
+  frame_buffer_size: 1000
+  exposure_ms: 10.0
+
+# Node Agent Configuration
+node_agent:
+  update_interval_ms: 1000
+  auto_accept_tasks: true
+  drift_reporting: true
+
+  # Drone hardware simulation (for sandbox)
+  drone_config:
+    max_flight_speed_m_s: 20.0
+    max_altitude_m: 120.0
+    battery_capacity_wh: 500.0
+    power_consumption_hover_w: 200.0
+    power_consumption_flight_w: 300.0
+    spectral_payload_mass_kg: 2.0
+
+# Mission Planner Configuration
+mission_planner:
+  default_spectral:
+    resolution_m: 0.5
+    altitude_m: 50.0
+    band_start_nm: 400
+    band_end_nm: 2500
+    band_count: 200
+    exposure_ms: 10.0
+
+  # Priority scoring
+  priority_formula: "contract * uncertainty * (1 + contamination)"
+  max_concurrent_tasks: 10
+  deadline_buffer_s: 300
+
+# API Server Configuration
+api:
+  host: "0.0.0.0"
+  port: 8080
+  reload: false
+  log_level: "info"
+
+  # CORS
+  cors_origins:
+    - "http://localhost:3000"   # AIP frontend
+    - "http://localhost:3001"
+
+  # Rate limiting
+  rate_limit:
+    requests_per_minute: 100
+    burst: 10
+
+# Integration Endpoints
+integrations:
+  arthedain:
+    enabled: true
+    path: "../arthedain"       # Local editable install path
+    mock_fallback: true          # Use mock if real unavailable
+
+  hsi_model:
+    enabled: true
+    api_url: "http://localhost:8001"
+    model_version: "main"
+    mock_fallback: true
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  outputs:
+    - "stdout"
+    - "file:syndar.log"
+
+  structured_logging: true
+  include_tracebacks: true
+
+# Environment-specific overrides
+# Use SYNDAR_ENV environment variable to select profile
+profiles:
+  development:
+    transport:
+      mqtt:
+        enabled: false         # Use local transport only
+    logging:
+      level: "DEBUG"
+    api:
+      reload: true
+
+  production:
+    transport:
+      mqtt:
+        enabled: true
+        broker: "mqtt.enotrium.io"
+        qos: 2
+    attestation:
+      require_signatures: true
+    logging:
+      level: "WARN"
+
+  sandbox:
+    mesh:
+      fanout: 1                # Simpler for local testing
+    drift_monitor:
+      min_nodes_for_correlation: 1  # Lower threshold for testing
+    integrations:
+      arthedain:
+        mock_fallback: true
+      hsi_model:
+        mock_fallback: true

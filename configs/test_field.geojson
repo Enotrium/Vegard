@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "field_id": "test-field-001",
+        "name": "Syndar Test Field",
+        "area_acres": 45.2,
+        "crop_type": "hemp",
+        "contract_value": 150000,
+        "priority": 0.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-77.0366, 39.0012],
+            [-77.0344, 39.0012],
+            [-77.0344, 39.0034],
+            [-77.0366, 39.0034],
+            [-77.0366, 39.0012]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "grpcio-tools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "syndar"
+version = "0.1.0"
+description = "Autonomous Agricultural Intelligence Platform - Drone Fleet Coordination & Soil Intelligence Fabric"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Enotrium Syndicate", email = "team@enotrium.io"}
+]
+keywords = ["drones", "agriculture", "hyperspectral", "mesh", "autonomous-systems"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "grpcio>=1.59.0",
+    "grpcio-tools>=1.59.0",
+    "protobuf>=4.24.0",
+    "paho-mqtt>=1.6.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "httpx>=0.25.0",
+    "pyyaml>=6.0.1",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "shapely>=2.0.2",
+    "numpy>=1.26.0",
+    "python-gnupg>=0.5.2",
+    "aiofiles>=23.2.0",
+    "tenacity>=8.2.3",
+    "structlog>=23.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.10.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "types-pyyaml>=6.0.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/EnotriumSyndicate/Syndar"
+Documentation = "https://github.com/EnotriumSyndicate/Syndar/blob/main/CLAUDE.md"
+Repository = "https://github.com/EnotriumSyndicate/Syndar.git"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["syndar*"]
+exclude = ["tests*", "sandbox*"]
+
+[tool.setuptools.package-data]
+syndar = ["proto/*.proto", "configs/*.yaml"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package syndar.api.v1;
+
+import "syndar/proto/soil.proto";
+import "syndar/proto/drift.proto";
+
+option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
+option python_package = "syndar.proto";
+
+// EntityType defines the kind of autonomous asset
+enum EntityType {
+  ENTITY_TYPE_UNSPECIFIED = 0;
+  ENTITY_TYPE_DRONE = 1;
+  ENTITY_TYPE_SCANNER = 2;
+  ENTITY_TYPE_BASE = 3;
+  ENTITY_TYPE_RELAY = 4;
+}
+
+// Geographic position with altitude
+message Position {
+  double latitude = 1;
+  double longitude = 2;
+  double altitude_m = 3;
+  float accuracy_m = 4;
+  int64 timestamp_ms = 5;
+}
+
+// EntityState is the core mesh entity - extends Anduril Lattice Entity
+// with agricultural-specific fields
+message EntityState {
+  string entity_id = 1;           // "drone:{region}:{serial}"
+  EntityType type = 2;
+  Position position = 3;
+
+  // Agricultural intelligence payload
+  SoilPrediction soil = 4;
+
+  // Arthedain drift signal
+  float drift_score = 5;          // E(t) deviation magnitude
+  bool drift_flag = 6;            // True if drift exceeds threshold
+
+  // System health
+  float battery_pct = 7;
+  string task_id = 8;             // Currently assigned task
+
+  // Provenance
+  int64 timestamp_ms = 9;
+  bytes signature = 10;           // PGP signature of this message
+  string model_version = 11;      // Hyperspectral-Restruct commit hash
+}
+
+// EntityEvent wraps EntityState for pub/sub streaming
+message EntityEvent {
+  string event_id = 1;
+  EntityState entity = 2;
+  EventType event_type = 3;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_UPDATE = 1;
+  EVENT_TYPE_HEARTBEAT = 2;
+  EVENT_TYPE_DRIFT_ALERT = 3;
+  EVENT_TYPE_TASK_COMPLETE = 4;
+}
+
+// Batch entity update for efficiency
+message EntityBatch {
+  repeated EntityState entities = 1;
+  int64 timestamp_ms = 2;
+}
+
+// Query request for entity history
+message EntityQuery {
+  string entity_id = 1;
+  int64 start_time_ms = 2;
+  int64 end_time_ms = 3;
+  bool include_soil = 4;
+}
+
+// Query response
+message EntityHistory {
+  string entity_id = 1;
+  repeated EntityState states = 2;
+}

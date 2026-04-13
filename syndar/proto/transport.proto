@@ -1,0 +1,201 @@
+syntax = "proto3";
+
+package syndar.api.v1;
+
+import "syndar/proto/entity.proto";
+import "syndar/proto/task.proto";
+import "syndar/proto/drift.proto";
+import "syndar/proto/soil.proto";
+
+option go_package = "github.com/EnotriumSyndicate/Syndar/syndar/proto";
+option python_package = "syndar.proto";
+
+// MeshService - gRPC for drone↔node communication
+// Compatible with Anduril Lattice mesh patterns
+service MeshService {
+  // Bidirectional streaming for real-time entity state
+  rpc StreamEntities(stream EntityState) returns (stream EntityState);
+
+  // Unary updates for low-bandwidth scenarios
+  rpc PublishEntity(EntityState) returns (PublishAck);
+
+  // Batch entity sync
+  rpc SyncEntities(EntityBatch) returns (SyncAck);
+
+  // Entity query
+  rpc QueryEntities(EntityQuery) returns (EntityHistory);
+
+  // Heartbeat for liveness
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+message PublishAck {
+  string entity_id = 1;
+  int64 received_at_ms = 2;
+  bool valid = 3;
+  string error = 4;
+}
+
+message SyncAck {
+  int32 received_count = 1;
+  int64 received_at_ms = 2;
+}
+
+message HeartbeatRequest {
+  string entity_id = 1;
+  int64 timestamp_ms = 2;
+  bytes signature = 3;
+}
+
+message HeartbeatResponse {
+  string entity_id = 1;
+  int64 server_time_ms = 2;
+  MeshStatus status = 3;
+}
+
+enum MeshStatus {
+  MESH_STATUS_UNSPECIFIED = 0;
+  MESH_STATUS_HEALTHY = 1;
+  MESH_STATUS_DEGRADED = 2;
+  MESH_STATUS_PARTITIONED = 3;
+}
+
+// TaskService - Auction and task management
+service TaskService {
+  // Publish a new task for bidding
+  rpc PublishTask(TaskRequest) returns (TaskPublished);
+
+  // Submit a bid
+  rpc Bid(TaskBid) returns (BidAck);
+
+  // Accept/assign a task
+  rpc AcceptTask(TaskAck) returns (TaskAssigned);
+
+  // Stream progress updates
+  rpc StreamProgress(stream TaskProgress) returns (stream TaskStatus);
+
+  // Report task completion
+  rpc CompleteTask(TaskResult) returns (CompletionAck);
+
+  // Cancel a task
+  rpc CancelTask(CancelRequest) returns (CancelResponse);
+}
+
+message TaskPublished {
+  string task_id = 1;
+  int64 published_at_ms = 2;
+  int32 subscriber_count = 3;
+}
+
+message BidAck {
+  string task_id = 1;
+  string entity_id = 2;
+  bool accepted = 3;
+  string rejection_reason = 4;
+}
+
+message TaskAssigned {
+  string task_id = 1;
+  string entity_id = 2;
+  int64 assigned_at_ms = 3;
+  int64 deadline_ms = 4;
+}
+
+message CompletionAck {
+  string task_id = 1;
+  bool accepted = 2;
+  string rejection_reason = 3;
+  int64 processed_at_ms = 4;
+}
+
+message CancelRequest {
+  string task_id = 1;
+  string requested_by = 2;
+  string reason = 3;
+}
+
+message CancelResponse {
+  string task_id = 1;
+  bool cancelled = 2;
+  string status = 3;
+}
+
+// DriftService - Cross-node drift monitoring
+service DriftService {
+  // Stream drift signals from nodes
+  rpc StreamDrift(stream NodeDriftSignal) returns (stream DriftAlert);
+
+  // Query drift correlations
+  rpc QueryDrift(DriftQuery) returns (DriftReport);
+
+  // Subscribe to drift alerts
+  rpc SubscribeAlerts(AlertSubscription) returns (stream DriftAlert);
+
+  // Request model recalibration
+  rpc RequestRecalibration(RecalibrationRequest) returns (RecalibrationResponse);
+}
+
+message AlertSubscription {
+  string subscriber_id = 1;
+  float min_severity = 2;  // Minimum severity to receive
+  repeated string field_ids = 3;
+}
+
+// AIPBridgeService - REST fallback for AIP integration
+// These messages map to REST API at /api/syndar/ingest
+service AIPBridgeService {
+  // Ingest soil predictions
+  rpc IngestSoil(SoilPrediction) returns (IngestAck);
+
+  // Batch ingest
+  rpc IngestBatch(FieldSoilMap) returns (BatchIngestAck);
+
+  // Query field status from AIP perspective
+  rpc QueryFieldStatus(FieldStatusRequest) returns (FieldStatusResponse);
+}
+
+message IngestAck {
+  string scan_id = 1;
+  bool accepted = 2;
+  string aip_record_id = 3;
+  int64 processed_at_ms = 4;
+  string error = 5;
+}
+
+message BatchIngestAck {
+  string field_id = 1;
+  int32 accepted_count = 2;
+  int32 rejected_count = 3;
+  int64 processed_at_ms = 4;
+}
+
+message FieldStatusRequest {
+  string field_id = 1;
+  bool include_predictions = 2;
+  bool include_coverage = 3;
+}
+
+message FieldStatusResponse {
+  string field_id = 1;
+  bool exists = 2;
+  float scan_coverage_pct = 3;
+  int32 prediction_count = 4;
+  int64 last_scan_at_ms = 5;
+  string aip_contract_status = 6;
+}
+
+// Gossip protocol messages for mesh discovery
+message GossipMessage {
+  string sender_id = 1;
+  int64 timestamp_ms = 2;
+  repeated string known_peers = 3;
+  repeated EntityState entity_deltas = 4;
+  int32 ttl = 5;
+}
+
+message GossipAck {
+  string receiver_id = 1;
+  string sender_id = 2;
+  int64 received_at_ms = 3;
+  repeated string unknown_entities = 4;
+}

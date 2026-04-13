@@ -1,0 +1,252 @@
+"""Gossip protocol state mesh - Anduril Lattice Entity Mesh analog
+
+Each node broadcasts entity state to peers without central broker.
+Eventual consistency via gossip fanout.
+"""
+
+import asyncio
+import time
+from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import AsyncIterator, Callable, Optional
+from collections.abc import AsyncIterator
+
+import structlog
+from pydantic import BaseModel, Field
+
+logger = structlog.get_logger()
+
+
+class Position(BaseModel):
+    lat: float
+    lng: float
+    alt: float = 0.0
+    accuracy: float = 1.0
+
+
+class SoilPrediction(BaseModel):
+    field_id: str
+    nutrients: dict[str, float] = Field(default_factory=dict)
+    land_value_score: float = 0.0
+    contamination_detected: bool = False
+    spectral_hash: str = ""
+
+
+class EntityState(BaseModel):
+    """Core mesh entity - matches proto/entity.proto"""
+
+    entity_id: str
+    entity_type: str = "drone"
+    position: Position
+    soil: Optional[SoilPrediction] = None
+    drift_score: float = 0.0
+    drift_flag: bool = False
+    battery_pct: float = 100.0
+    task_id: Optional[str] = None
+    timestamp_ms: int = Field(default_factory=lambda: int(time.time() * 1000))
+    signature: str = ""
+    model_version: str = ""
+
+
+@dataclass
+class MeshConfig:
+    fanout: int = 3
+    gossip_interval_ms: int = 1000
+    max_entity_age_ms: int = 30000
+    heartbeat_timeout_ms: int = 10000
+
+
+class EntityStore:
+    """Time-series store of entity states with geo-indexing"""
+
+    def __init__(self, config: MeshConfig = None):
+        self.config = config or MeshConfig()
+        self._entities: dict[str, EntityState] = {}
+        self._history: dict[str, list[EntityState]] = defaultdict(list)
+        self._subscribers: list[Callable[[EntityState], None]] = []
+        self._lock = asyncio.Lock()
+
+    async def update(self, entity: EntityState) -> None:
+        """Update entity state and notify subscribers"""
+        async with self._lock:
+            old = self._entities.get(entity.entity_id)
+            self._entities[entity.entity_id] = entity
+            self._history[entity.entity_id].append(entity)
+
+            # Trim old history
+            cutoff = time.time() * 1000 - self.config.max_entity_age_ms
+            self._history[entity.entity_id] = [
+                e for e in self._history[entity.entity_id] if e.timestamp_ms > cutoff
+            ]
+
+        if old is None or old.timestamp_ms < entity.timestamp_ms:
+            await self._notify(entity)
+
+    async def get(self, entity_id: str) -> Optional[EntityState]:
+        async with self._lock:
+            return self._entities.get(entity_id)
+
+    async def get_all(self, entity_type: Optional[str] = None) -> list[EntityState]:
+        async with self._lock:
+            entities = list(self._entities.values())
+            if entity_type:
+                entities = [e for e in entities if e.entity_type == entity_type]
+            return entities
+
+    async def get_history(
+        self, entity_id: str, start_ms: int, end_ms: int
+    ) -> list[EntityState]:
+        async with self._lock:
+            history = self._history.get(entity_id, [])
+            return [e for e in history if start_ms <= e.timestamp_ms <= end_ms]
+
+    async def remove_stale(self) -> list[str]:
+        """Remove entities that haven't updated within timeout"""
+        cutoff = time.time() * 1000 - self.config.heartbeat_timeout_ms
+        removed = []
+        async with self._lock:
+            for entity_id, entity in list(self._entities.items()):
+                if entity.timestamp_ms < cutoff:
+                    del self._entities[entity_id]
+                    removed.append(entity_id)
+        if removed:
+            logger.info("Removed stale entities", count=len(removed), ids=removed)
+        return removed
+
+    def subscribe(self, callback: Callable[[EntityState], None]) -> None:
+        self._subscribers.append(callback)
+
+    def unsubscribe(self, callback: Callable[[EntityState], None]) -> None:
+        if callback in self._subscribers:
+            self._subscribers.remove(callback)
+
+    async def _notify(self, entity: EntityState) -> None:
+        for cb in self._subscribers:
+            try:
+                cb(entity)
+            except Exception:
+                logger.exception("Subscriber failed", entity_id=entity.entity_id)
+
+    async def query_nearby(
+        self, lat: float, lng: float, radius_m: float, entity_type: Optional[str] = None
+    ) -> list[tuple[EntityState, float]]:
+        """Query entities within radius (simple Euclidean for now)"""
+        results = []
+        entities = await self.get_all(entity_type)
+        for e in entities:
+            dist = ((e.position.lat - lat) ** 2 + (e.position.lng - lng) ** 2) ** 0.5
+            # Rough conversion to meters (at equator)
+            dist_m = dist * 111000
+            if dist_m <= radius_m:
+                results.append((e, dist_m))
+        return sorted(results, key=lambda x: x[1])
+
+
+class Mesh:
+    """Gossip protocol mesh - core coordination fabric"""
+
+    def __init__(self, config: MeshConfig = None):
+        self.config = config or MeshConfig()
+        self.store = EntityStore(config)
+        self._peers: set[str] = set()
+        self._gossip_task: Optional[asyncio.Task] = None
+        self._cleanup_task: Optional[asyncio.Task] = None
+        self._running = False
+
+    async def start(self) -> None:
+        """Start mesh gossip and maintenance tasks"""
+        self._running = True
+        self._gossip_task = asyncio.create_task(self._gossip_loop())
+        self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+        logger.info("Mesh started", fanout=self.config.fanout)
+
+    async def stop(self) -> None:
+        """Stop mesh tasks"""
+        self._running = False
+        if self._gossip_task:
+            self._gossip_task.cancel()
+        if self._cleanup_task:
+            self._cleanup_task.cancel()
+        logger.info("Mesh stopped")
+
+    async def join(self, peer_address: str) -> None:
+        """Add peer to mesh"""
+        self._peers.add(peer_address)
+        logger.info("Peer joined", peer=peer_address)
+
+    async def leave(self, peer_address: str) -> None:
+        """Remove peer from mesh"""
+        self._peers.discard(peer_address)
+        logger.info("Peer left", peer=peer_address)
+
+    async def publish(self, entity: EntityState) -> None:
+        """Publish entity state to mesh"""
+        await self.store.update(entity)
+        # Gossip to peers
+        await self._gossip_entity(entity)
+
+    async def _gossip_loop(self) -> None:
+        """Periodic gossip of known entities"""
+        while self._running:
+            try:
+                await asyncio.sleep(self.config.gossip_interval_ms / 1000)
+                entities = await self.store.get_all()
+                for entity in entities:
+                    await self._gossip_entity(entity)
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.exception("Gossip loop error")
+
+    async def _cleanup_loop(self) -> None:
+        """Periodic cleanup of stale entities"""
+        while self._running:
+            try:
+                await asyncio.sleep(self.config.heartbeat_timeout_ms / 1000)
+                await self.store.remove_stale()
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                logger.exception("Cleanup loop error")
+
+    async def _gossip_entity(self, entity: EntityState) -> None:
+        """Gossip entity to N random peers (fanout)"""
+        # TODO: Implement actual peer gossip via gRPC
+        # For now, just local storage
+        pass
+
+    def stream_entities(
+        self, entity_type: Optional[str] = None
+    ) -> AsyncIterator[EntityState]:
+        """Stream entity updates"""
+        queue: asyncio.Queue[EntityState] = asyncio.Queue()
+
+        def on_update(entity: EntityState) -> None:
+            if entity_type is None or entity.entity_type == entity_type:
+                try:
+                    queue.put_nowait(entity)
+                except asyncio.QueueFull:
+                    pass
+
+        self.store.subscribe(on_update)
+
+        async def generator() -> AsyncIterator[EntityState]:
+            try:
+                while True:
+                    entity = await queue.get()
+                    yield entity
+            finally:
+                self.store.unsubscribe(on_update)
+
+        return generator()
+
+    async def get_fused_picture(self) -> dict:
+        """Get current fused operational picture"""
+        drones = await self.store.get_all("drone")
+        return {
+            "timestamp_ms": int(time.time() * 1000),
+            "drone_count": len(drones),
+            "drones": [d.model_dump() for d in drones],
+            "active_tasks": len([d for d in drones if d.task_id]),
+            "drift_alerts": len([d for d in drones if d.drift_flag]),
+        }

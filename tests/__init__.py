@@ -1,0 +1,1 @@
+"""Syndar test suite"""
