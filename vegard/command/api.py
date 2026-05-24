@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, Query, Security, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Security, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -47,7 +47,7 @@ limiter = Limiter(key_func=get_remote_address)
 class TaskRequest(BaseModel):
     """Task creation request"""
     field_id: str = Field(..., min_length=1, max_length=100, description="Field identifier")
-    field_boundary: list[tuple[float, float]] = Field(..., min_items=3, description="Polygon boundary coordinates")
+    field_boundary: list[tuple[float, float]] = Field(..., min_length=3, description="Polygon boundary coordinates")
     spectral_config: dict = Field(default_factory=dict, description="Spectral configuration")
     priority: int = Field(default=5, ge=1, le=10, description="Task priority (1-10)")
     deadline_ms: Optional[int] = Field(None, gt=0, description="Deadline in milliseconds since epoch")
@@ -154,7 +154,7 @@ app.add_middleware(
 
 @app.get("/health", tags=["System"])
 @limiter.limit("100/minute")
-async def health_check() -> dict:
+async def health_check(request: Request) -> dict:
     """
     Health check endpoint
     
@@ -184,6 +184,7 @@ async def dashboard():
 @app.get("/fop", tags=["Field Operations"])
 @limiter.limit("60/minute")
 async def get_fused_picture(
+    request: Request,
     entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')"),
     include_tracks: bool = Query(True, description="Include entity tracks in the response"),
     include_soil: bool = Query(True, description="Include soil prediction data"),
@@ -233,6 +234,7 @@ async def get_fop_state():
 @app.get("/entities", tags=["Entities"])
 @limiter.limit("60/minute")
 async def get_entities(
+    request: Request,
     entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')", min_length=1, max_length=50),
     near_lat: Optional[float] = Query(None, description="Latitude for nearby query", ge=-90, le=90),
     near_lng: Optional[float] = Query(None, description="Longitude for nearby query", ge=-180, le=180),
@@ -323,7 +325,7 @@ async def get_entity_history(
 
 @app.post("/tasks", tags=["Tasks"])
 @limiter.limit("10/minute")
-async def create_task(task_request: dict) -> dict:
+async def create_task(request: Request, task_request: dict) -> dict:
     """
     Create a new scan task
     
@@ -604,7 +606,7 @@ async def get_stats() -> dict:
     return stats
 
 
-@app.websocket("/stream", tags=["Real-time"])
+@app.websocket("/stream")
 async def websocket_stream(websocket: WebSocket):
     """
     WebSocket for real-time entity stream
