@@ -1,0 +1,72 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging and build artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
+sdist/
+*.egg
+pip-wheel-metadata/
+
+# Test, coverage, and type-checking caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and runtime output
+*.log
+logs/
+tmp/
+temp/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated protobuf Python files (ONLY if these are generated, not source-of-truth)
+# Uncomment if appropriate:
+# vegard/proto/*_pb2.py
+# vegard/proto/*_pb2_grpc.py
+
+# Docker local overrides
+docker-compose.override.yml
+
+# SQLite / local db artifacts
+*.db
+*.sqlite
+*.sqlite3
+
+# Prometheus / metrics output if generated locally
+prometheus-data/
+grafana-data/

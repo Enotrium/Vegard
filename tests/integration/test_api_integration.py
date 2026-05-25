@@ -91,10 +91,22 @@ def test_create_task(test_client):
     """Test task creation endpoint"""
     task_request = {
         "field_id": "test-field",
-        "field_boundary": [(40.0, -74.0), (40.01, -74.0), (40.01, -74.01), (40.0, -74.01)],
+        "field_boundary": [[40.0, -74.0], [40.01, -74.0], [40.01, -74.01], [40.0, -74.01]],
         "spectral_config": {},
         "priority": 5,
     }
+    # task_request = {
+    #     "field_id": "test-field",
+    #     "task_id": "test-task-001",
+    #     "target_polygon": [
+    #         [40.0, -74.0],
+    #         [40.01, -74.0],
+    #         [40.01, -74.01],
+    #         [40.0, -74.01],
+    #     ],
+    #     "priority": 0.5,
+    #     "deadline_ms": 10000,
+    # }
     response = test_client.post("/tasks", json=task_request)
     # May return 503 if mission planner not fully initialized
     assert response.status_code in [200, 503]

@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 import structlog
-from fastapi import Depends, FastAPI, HTTPException, Query, Security, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Security, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -47,7 +47,7 @@ limiter = Limiter(key_func=get_remote_address)
 class TaskRequest(BaseModel):
     """Task creation request"""
     field_id: str = Field(..., min_length=1, max_length=100, description="Field identifier")
-    field_boundary: list[tuple[float, float]] = Field(..., min_items=3, description="Polygon boundary coordinates")
+    field_boundary: list[tuple[float, float]] = Field(..., min_length=3, description="Polygon boundary coordinates")
     spectral_config: dict = Field(default_factory=dict, description="Spectral configuration")
     priority: int = Field(default=5, ge=1, le=10, description="Task priority (1-10)")
     deadline_ms: Optional[int] = Field(None, gt=0, description="Deadline in milliseconds since epoch")
@@ -154,7 +154,7 @@ app.add_middleware(
 
 @app.get("/health", tags=["System"])
 @limiter.limit("100/minute")
-async def health_check() -> dict:
+async def health_check(request: Request) -> dict:
     """
     Health check endpoint
     
@@ -184,6 +184,7 @@ async def dashboard():
 @app.get("/fop", tags=["Field Operations"])
 @limiter.limit("60/minute")
 async def get_fused_picture(
+    request: Request,
     entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')"),
     include_tracks: bool = Query(True, description="Include entity tracks in the response"),
     include_soil: bool = Query(True, description="Include soil prediction data"),
@@ -233,6 +234,7 @@ async def get_fop_state():
 @app.get("/entities", tags=["Entities"])
 @limiter.limit("60/minute")
 async def get_entities(
+    request: Request,
     entity_type: Optional[str] = Query(None, description="Filter by entity type (e.g., 'drone', 'sensor')", min_length=1, max_length=50),
     near_lat: Optional[float] = Query(None, description="Latitude for nearby query", ge=-90, le=90),
     near_lng: Optional[float] = Query(None, description="Longitude for nearby query", ge=-180, le=180),
@@ -323,7 +325,7 @@ async def get_entity_history(
 
 @app.post("/tasks", tags=["Tasks"])
 @limiter.limit("10/minute")
-async def create_task(task_request: dict) -> dict:
+async def create_task(request: Request, task_request: TaskRequest) -> dict:
     """
     Create a new scan task
     
@@ -341,10 +343,25 @@ async def create_task(task_request: dict) -> dict:
     if not mission_planner:
         raise HTTPException(status_code=503, detail="Mission planner not initialized")
 
-    from vegard.fabric.task_allocator import TaskRequest
+    from uuid import uuid4
+    import time
+    from vegard.fabric.task_allocator import (
+        TaskRequest as AllocatorTaskRequest,
+        SpectralConfig,
+    )
 
     try:
-        task = TaskRequest(**task_request)
+        deadline_ms = task_request.deadline_ms or int(time.time() * 1000) + 600000  # Default deadline 10 minutes from now
+        
+        task = AllocatorTaskRequest(
+            task_id=str(uuid4()),
+            field_id=task_request.field_id,
+            target_polygon=task_request.field_boundary,
+            priority=task_request.priority / 10.0,  # Normalize priority to 0-1
+            deadline_ms=deadline_ms,
+            spectral_config=SpectralConfig(**task_request.spectral_config),
+        )
+
         # Publish to task allocator
         if mission_planner.task_allocator:
             await mission_planner.task_allocator.publish_task(task)
@@ -596,15 +613,15 @@ async def get_stats() -> dict:
         dict: System statistics including entity counts, task counts, and component status
     """
     stats = {
-        "mesh": mesh.store.get_stats() if mesh else None,
+        "mesh": await mesh.store.get_stats() if mesh else None,
         "fop": fop.get_stats() if fop else None,
         "mission": mission_planner.get_stats() if mission_planner else None,
-        "drift": drift_monitor.get_stats() if drift_monitor else None,
+        "drift": await drift_monitor.get_stats() if drift_monitor else None,
     }
     return stats
 
 
-@app.websocket("/stream", tags=["Real-time"])
+@app.websocket("/stream")
 async def websocket_stream(websocket: WebSocket):
     """
     WebSocket for real-time entity stream

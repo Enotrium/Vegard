@@ -103,7 +103,10 @@ class EntityStore:
     """Thread-safe entity store with subscription support and database persistence"""
 
     def __init__(
-        self, config: Optional[EntityStoreConfig] = None, database: Optional[Database] = None
+        self, 
+        config: Optional[EntityStoreConfig] = None, 
+        database: Optional[Database] = None,
+        stale_timeout_ms: Optional[int] = None,
     ):
         self.config = config or EntityStoreConfig()
         self._entities: dict[str, EntityState] = {}
@@ -111,7 +114,13 @@ class EntityStore:
         self._subscribers: list[Callable[[EntityState], None]] = []
         self._lock = asyncio.Lock()
         self._database = database
-        
+        self.stale_timeout_ms = (
+            stale_timeout_ms 
+            or getattr(self.config, "stale_timeout_ms", None)
+            or getattr(self.config, "max_entity_age_ms", None)
+            or 30000
+        )
+
         # Performance optimizations: indexes
         self._type_index: dict[str, set[str]] = defaultdict(set)  # entity_type -> entity_ids
         self._cache: dict[str, tuple[list[EntityState], float]] = {}  # query -> (result, timestamp)
@@ -193,6 +202,23 @@ class EntityStore:
                 return [self._entities[eid] for eid in entity_ids if eid in self._entities]
             return list(self._entities.values())
 
+    async def get_stats(self) -> dict:
+        """Return summary statistics for the entity store"""
+        async with self._lock:
+            entity_count = len(self._entities)
+            history_count = sum(len(history) for history in self._history.values())
+            type_counts = {
+                entity_type: len(entity_ids)
+                for entity_type, entity_ids in self._type_index.items()
+            }
+            return {
+                "entity_count": entity_count,
+                "history_count": history_count,
+                "type_counts": type_counts,
+                "subscriber_count": len(self._subscribers),
+                "cache_entries": len(self._cache),
+            }
+
     async def get_history(
         self, entity_id: str, start_ms: int, end_ms: int
     ) -> list[EntityState]:
@@ -249,14 +275,22 @@ class EntityStore:
 class Mesh:
     """Gossip protocol mesh - core coordination fabric"""
 
-    def __init__(self, config: MeshConfig = None, database: Optional[Database] = None):
+    def __init__(
+            self, config: MeshConfig = None, 
+            database: Optional[Database] = None,
+            transport: Optional[object] = None  # Placeholder for transport layer (e.g., gRPC, MQTT)
+            ):
         self.config = config or MeshConfig()
-        self.store = EntityStore(config, database)
+        self.store = EntityStore(
+            database=database,
+            stale_timeout_ms=self.config.max_entity_age_ms,
+        )
         self._peers: set[str] = set()
         self._gossip_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
         self._running = False
         self._database = database
+        self._transport = transport  # Transport layer for gossiping
 
     async def start(self) -> None:
         """Start mesh gossip and maintenance tasks"""
