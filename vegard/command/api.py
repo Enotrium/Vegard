@@ -325,7 +325,7 @@ async def get_entity_history(
 
 @app.post("/tasks", tags=["Tasks"])
 @limiter.limit("10/minute")
-async def create_task(request: Request, task_request: dict) -> dict:
+async def create_task(request: Request, task_request: TaskRequest) -> dict:
     """
     Create a new scan task
     
@@ -343,10 +343,25 @@ async def create_task(request: Request, task_request: dict) -> dict:
     if not mission_planner:
         raise HTTPException(status_code=503, detail="Mission planner not initialized")
 
-    from vegard.fabric.task_allocator import TaskRequest
+    from uuid import uuid4
+    import time
+    from vegard.fabric.task_allocator import (
+        TaskRequest as AllocatorTaskRequest,
+        SpectralConfig,
+    )
 
     try:
-        task = TaskRequest(**task_request)
+        deadline_ms = task_request.deadline_ms or int(time.time() * 1000) + 600000  # Default deadline 10 minutes from now
+        
+        task = AllocatorTaskRequest(
+            task_id=str(uuid4()),
+            field_id=task_request.field_id,
+            target_polygon=task_request.field_boundary,
+            priority=task_request.priority / 10.0,  # Normalize priority to 0-1
+            deadline_ms=deadline_ms,
+            spectral_config=SpectralConfig(**task_request.spectral_config),
+        )
+
         # Publish to task allocator
         if mission_planner.task_allocator:
             await mission_planner.task_allocator.publish_task(task)
