@@ -193,6 +193,23 @@ class EntityStore:
                 return [self._entities[eid] for eid in entity_ids if eid in self._entities]
             return list(self._entities.values())
 
+    async def get_stats(self) -> dict:
+        """Return summary statistics for the entity store"""
+        async with self._lock:
+            entity_count = len(self._entities)
+            history_count = sum(len(history) for history in self._history.values())
+            type_counts = {
+                entity_type: len(entity_ids)
+                for entity_type, entity_ids in self._type_index.items()
+            }
+            return {
+                "entity_count": entity_count,
+                "history_count": history_count,
+                "type_counts": type_counts,
+                "subscriber_count": len(self._subscribers),
+                "cache_entries": len(self._cache),
+            }
+
     async def get_history(
         self, entity_id: str, start_ms: int, end_ms: int
     ) -> list[EntityState]:

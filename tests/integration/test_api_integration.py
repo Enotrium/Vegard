@@ -96,6 +96,8 @@ def test_create_task(test_client):
         "priority": 5,
     }
     response = test_client.post("/tasks", json=task_request)
+    print(response.status_code)
+    print(response.json())
     # May return 503 if mission planner not fully initialized
     assert response.status_code in [200, 503]
 

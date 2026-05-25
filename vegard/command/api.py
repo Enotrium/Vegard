@@ -598,10 +598,10 @@ async def get_stats() -> dict:
         dict: System statistics including entity counts, task counts, and component status
     """
     stats = {
-        "mesh": mesh.store.get_stats() if mesh else None,
+        "mesh": await mesh.store.get_stats() if mesh else None,
         "fop": fop.get_stats() if fop else None,
         "mission": mission_planner.get_stats() if mission_planner else None,
-        "drift": drift_monitor.get_stats() if drift_monitor else None,
+        "drift": await drift_monitor.get_stats() if drift_monitor else None,
     }
     return stats
 
