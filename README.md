@@ -35,10 +35,10 @@ Vegard is structured in three layers:
 - **Integrations**: Arthedain client, HSI API client with graceful mock fallbacks
 
 ### Layer 2 — Fabric (Coordination)
-- **Mesh**: Gossip protocol state mesh (Anduril Lattice pattern)
+- **Mesh**: Gossip protocol state mesh
 - **TaskAllocator**: Auction-based tasking with preemption
 - **DriftMonitor**: Cross-node drift correlation (key differentiator)
-- **Attestation**: PGP-signed soil outputs for AIP ZK chain
+- **Attestation**: PGP-signed soil outputs for AIP 
 - **Transport**: gRPC (drone↔node) + MQTT (cloud↔AIP)
 
 ### Layer 1 — Command (Operational Picture)
